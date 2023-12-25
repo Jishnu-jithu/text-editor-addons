@@ -1,4 +1,4 @@
-# Text Editor Add-Ons
+<h1 align="center">Text Editor Add-Ons</h1>
 
 ## Find & Replace Popup
 

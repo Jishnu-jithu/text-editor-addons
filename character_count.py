@@ -18,8 +18,12 @@
 
 bl_info = {
     "name": "Character Count",
-    "blender": (2, 80, 0),
+    "author": "Jishnu jithu",
+    "version": (1, 0),
+    "blender": (3, 0, 0),
     "category": "Text Editor",
+    "location": "Text Editor > Footer",
+    "description": "Displays line number, column number, and total character count in the Text Editor footer.",
 }
 
 import bpy

@@ -1,5 +1,17 @@
 <h1 align="center">Text Editor Add-Ons</h1>
 
+## Open Recent
+
+https://github.com/Jishnu-jithu/text-editor-addons/assets/145359279/5faf1a15-5a40-4990-83e3-154cc8f73fc7
+
+**Features:** 
+- Manage filenames in the open recent menu via Sidebar > Open Recent Panel (UI List)
+- Add, remove, move up, and down filenames through the UI list
+- Change the filename **`__init__.py`** to the folder's name for better understanding
+
+------------
+
+
 ## Find & Replace Popup
 
 ![find](https://github.com/Jishnu-jithu/text-editor-addons/assets/145359279/a4b69aa1-abd7-42cc-8084-6362716e2c01)
@@ -21,16 +33,13 @@
 
 ![count](https://github.com/Jishnu-jithu/text-editor-addons/assets/145359279/9375d499-a79f-483c-8163-2a13841f6968)
 
+### Features:
+
 - Shows Line Number, Column Number, and Total Character Count
 - Displays Character Count for Selected Text
 
 ------------
 
-## Open Recent
+## Jump to Line
 
-![VID-20231226-165152](https://github.com/Jishnu-jithu/text-editor-addons/assets/145359279/0b977698-b2fc-4107-9677-4e9400d12567)
-
-**Features:** 
-- Manage filenames in the open recent menu via Sidebar > Open Recent Panel (UI List)
-- Add, remove, move up, and down filenames through the UI list
-- Change the filename **`__init__.py`** to the folder's name for better understanding
+https://github.com/Jishnu-jithu/text-editor-addons/assets/145359279/2895cb7f-f12b-4a93-b842-1ddd2ab501e5

@@ -28,8 +28,6 @@
 
 ## Open Recent
 
-- **Description:** Shows recently opened text files
-
 ![VID-20231226-165152](https://github.com/Jishnu-jithu/text-editor-addons/assets/145359279/0b977698-b2fc-4107-9677-4e9400d12567)
 
 **Features:** 

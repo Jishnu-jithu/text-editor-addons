@@ -127,9 +127,14 @@ class TEXT_OT_open_file(Operator):
     @classmethod
     def description(cls, context, properties):
         if properties.filepath != '':
-            # Get the modified time of the file
-            modified_time = time.strftime("%d %b %Y %I:%M %p", time.localtime(os.path.getatime(properties.filepath)))
-            return f"{properties.filepath}\n\nModified: {modified_time}"
+            try:
+                # Get the modified time of the file if it exists
+                modified_time = time.strftime("%d %b %Y %I:%M %p", time.localtime(os.path.getatime(properties.filepath)))
+                return f"{properties.filepath}\n\nModified: {modified_time}"
+            except FileNotFoundError:
+                return f"File not found: {properties.filepath}"
+            except Exception as e:
+                return f"Error retrieving file information: {str(e)}"
         else:
             return "Open Text"
 
@@ -190,10 +195,11 @@ class TEXT_OT_save_mainfile(Operator, ImportHelper):
     def invoke(self, context, event):
         st = context.space_data.text
 
+        # Check if the filepath ends with '.py'
         if not st.name.endswith('.py'):
-            self.filepath = st.filepath + '.py'
+            self.filepath = st.name + '.py'
         else:
-            self.filepath = st.filepath
+            self.filepath = st.name
 
         if not st.is_in_memory:
             bpy.ops.text.save()
@@ -206,7 +212,7 @@ class TEXT_OT_save_mainfile(Operator, ImportHelper):
         st = context.space_data.text
         list, index, txt_path = get_recent_list()
 
-        bpy.ops.text.save(filepath=st.filepath, check_existing=True)
+        bpy.ops.text.save_as(filepath=self.filepath, check_existing=True)
 
         # Load existing file paths from 'open_recent.txt' if it exists
         imported_files = []
@@ -234,13 +240,11 @@ class TEXT_OT_save_as_mainfile(Operator, ImportHelper):
     bl_description = "Save active text data-block"
     bl_options = {'REGISTER', 'UNDO'}
 
-    # Filter for .py files
     filter_glob: bpy.props.StringProperty(default="*.py", options={'HIDDEN'})
 
     def invoke(self, context, event):
         st = context.space_data.text
 
-        # Check if the filepath ends with '.py'
         if not st.name.endswith('.py'):
             self.filepath = st.name + '.py'
         else:
@@ -250,10 +254,9 @@ class TEXT_OT_save_as_mainfile(Operator, ImportHelper):
 
     def execute(self, context):
         st = context.space_data.text
-        st.filepath = self.filepath
         list, index, txt_path = get_recent_list()
 
-        bpy.ops.text.save_as(filepath=st.filepath, check_existing=True)
+        bpy.ops.text.save_as(filepath=self.filepath, check_existing=True)
 
         if not st.filepath:
             self.report({'WARNING'}, "No valid text data-block to save")
@@ -305,10 +308,10 @@ class TEXT_MT_open_recent(Menu):
             if scene.display_folder and display_name.lower().endswith('__init__.py'):
                 folder_name = os.path.basename(os.path.dirname(filepath))
                 display_name = folder_name.lower().replace(" ", "_") + ".py"
-                
+
             elif scene.display_folder:
                 display_name = display_name.lower().replace(" ", "_")
-                
+
                 # Ensure it ends with ".py" if it doesn't already
                 if not display_name.endswith(".py"):
                     display_name += ".py"
@@ -358,7 +361,7 @@ class TEXT_UL_open_recent(UIList):
             display_name = folder_name.lower().replace(" ", "_") + ".py"
         elif context.scene.display_folder:
             display_name = display_name.lower().replace(" ", "_")
-            
+
             if not display_name.endswith(".py"):
                 display_name += ".py"
 
@@ -795,7 +798,7 @@ classes = (
 
     TEXT_UL_open_recent,
     TEXT_PT_open_recent,
-    TEXT_OT_open_recent_actions,    
+    TEXT_OT_open_recent_actions,
 )
 
 addon_keymaps = []

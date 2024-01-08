@@ -23,7 +23,7 @@ from bpy.types import Operator
 bl_info = {
     "name": "Find replace popup",
     "author": "jithu",
-    "version": (1, 0),
+    "version": (1, 1),
     "blender": (3, 0, 0),
     "location": "Text Editor > Find & Replace",
     "description": "Find replace popup",
@@ -271,11 +271,11 @@ def register():
         addon_keymaps.append((km, kmi))
 
         # Keymap for find_replace (find previous)
-        kmi = km.keymap_items.new('text.find_previous', 'UP_ARROW', 'PRESS')
+        kmi = km.keymap_items.new('text.find_previous', 'UP_ARROW', 'PRESS', alt=True)
         addon_keymaps.append((km, kmi))
 
         # Keymap for find (find next)
-        kmi = km.keymap_items.new('text.find', 'DOWN_ARROW', 'PRESS')
+        kmi = km.keymap_items.new('text.find', 'DOWN_ARROW', 'PRESS', alt=True)
         addon_keymaps.append((km, kmi))
 
 def unregister():

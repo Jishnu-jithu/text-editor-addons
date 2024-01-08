@@ -21,13 +21,13 @@ import os
 import time
 
 from bpy.app.handlers import persistent
-from bpy_extras.io_utils import ImportHelper
+from bpy_extras.io_utils import ImportHelper, ExportHelper
 from bpy.types import PropertyGroup, Operator, Panel, Menu, UIList
 
 bl_info = {
     "name": "Open Recent",
     "author": "Jithu",
-    "version": (1, 1),
+    "version": (1, 2),
     "blender": (4, 0, 0),
     "location": "Text Editor > Text > Open Recent",
     "description": "Provides a quick and easy way to access recently opened files in the Text Editor",
@@ -184,11 +184,13 @@ class TEXT_OT_open_file(Operator):
                     txt_file.write(filepath + '\n')
 
 
-class TEXT_OT_save_mainfile(Operator, ImportHelper):
+class TEXT_OT_save_mainfile(Operator, ExportHelper):
     bl_idname = "text.save_mainfile"
     bl_label = "Save"
     bl_description = "Save active text data-block"
     bl_options = {'REGISTER', 'UNDO'}
+    
+    filename_ext = ".py"
 
     filter_glob: bpy.props.StringProperty(default="*.py", options={'HIDDEN'})
 
@@ -234,11 +236,13 @@ class TEXT_OT_save_mainfile(Operator, ImportHelper):
         return {'FINISHED'}
 
 
-class TEXT_OT_save_as_mainfile(Operator, ImportHelper):
+class TEXT_OT_save_as_mainfile(Operator, ExportHelper):
     bl_idname = "text.save_as_mainfile"
     bl_label = "Save As"
     bl_description = "Save active text data-block"
     bl_options = {'REGISTER', 'UNDO'}
+    
+    filename_ext = ".py"
 
     filter_glob: bpy.props.StringProperty(default="*.py", options={'HIDDEN'})
 
@@ -255,6 +259,9 @@ class TEXT_OT_save_as_mainfile(Operator, ImportHelper):
     def execute(self, context):
         st = context.space_data.text
         list, index, txt_path = get_recent_list()
+        
+        if not self.filepath.endswith('.py'):
+            self.filepath += '.py'
 
         bpy.ops.text.save_as(filepath=self.filepath, check_existing=True)
 
@@ -685,7 +692,8 @@ def recent_header(self, context):
                     unlink="text.unlink", open="text.open_mainfile")
 
     layout.separator_spacer()
-
+    
+    """
     row = layout.row(align=True)
     row.prop(st, "show_line_numbers", text="")
     row.prop(st, "show_word_wrap", text="")
@@ -693,7 +701,7 @@ def recent_header(self, context):
     syntax = row.row(align=True)
     syntax.active = is_syntax_highlight_supported
     syntax.prop(st, "show_syntax_highlight", text="")
-
+    """
 
 def recent_text_menu(self, context):
     layout = self.layout

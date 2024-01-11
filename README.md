@@ -11,7 +11,6 @@ https://github.com/Jishnu-jithu/text-editor-addons/assets/145359279/5faf1a15-5a4
 
 ------------
 
-
 ## Find & Replace Popup
 
 ![find](https://github.com/Jishnu-jithu/text-editor-addons/assets/145359279/a4b69aa1-abd7-42cc-8084-6362716e2c01)
@@ -26,6 +25,17 @@ https://github.com/Jishnu-jithu/text-editor-addons/assets/145359279/5faf1a15-5a4
 **Usage:**
 - Open the popup with `F1`
 - Customize the shortcut in `Edit > Find Replace Popup > Right Click > Change Shortcut`
+
+------------
+
+## Trim Whitespace
+
+https://github.com/Jishnu-jithu/text-editor-addons/assets/145359279/e54e2801-016e-4c45-bb4e-ee8d35f47125
+
+**Features:**
+- Removes all trailing whitespace characters in the current text block.
+- Accessible through the Text Editor context menu: Text Editor > Context Menu > Trim Whitespace
+- Provides information on the number of removed trailing whitespace characters.
 
 ------------
 

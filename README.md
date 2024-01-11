@@ -53,3 +53,7 @@ https://github.com/Jishnu-jithu/text-editor-addons/assets/145359279/e54e2801-016
 ## Jump to Line
 
 https://github.com/Jishnu-jithu/text-editor-addons/assets/145359279/2895cb7f-f12b-4a93-b842-1ddd2ab501e5
+
+**Features:**
+- Navigate quickly to a specific line in the text editor.
+- Accessible through the text editor header

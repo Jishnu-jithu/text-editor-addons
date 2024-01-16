@@ -2,7 +2,7 @@
 
 ## Open Recent
 
-https://github.com/Jishnu-jithu/text-editor-addons/assets/145359279/5faf1a15-5a40-4990-83e3-154cc8f73fc7
+<img src="https://github.com/Jishnu-jithu/text-editor-addons/blob/ddfb7b0192ae661e178c44f8f0ac403b2b47a690/Videos/Open%20Recent%20v1.3.gif">
 
 **Features:** 
 - Manage filenames in the open recent menu via Sidebar > Open Recent Panel (UI List)

@@ -30,7 +30,7 @@ https://github.com/Jishnu-jithu/text-editor-addons/assets/145359279/5faf1a15-5a4
 
 ## Trim Whitespace
 
-https://github.com/Jishnu-jithu/text-editor-addons/assets/145359279/e54e2801-016e-4c45-bb4e-ee8d35f47125
+![295889542-e54e2801-016e-4c45-bb4](https://github.com/Jishnu-jithu/text-editor-addons/assets/145359279/eff27e80-c72a-40f5-9f85-e2e94a2a95c0)
 
 **Features:**
 - Removes all trailing whitespace characters in the current text block.
@@ -52,7 +52,7 @@ https://github.com/Jishnu-jithu/text-editor-addons/assets/145359279/e54e2801-016
 
 ## Jump to Line
 
-https://github.com/Jishnu-jithu/text-editor-addons/assets/145359279/2895cb7f-f12b-4a93-b842-1ddd2ab501e5
+![292867176-2895cb7f-f12b-4a93-b84](https://github.com/Jishnu-jithu/text-editor-addons/assets/145359279/6e7b62b8-ca65-44b3-82f7-b4b792dc1a0c)
 
 **Features:**
 - Navigate quickly to a specific line in the text editor.

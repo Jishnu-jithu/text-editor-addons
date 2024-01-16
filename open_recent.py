@@ -367,8 +367,8 @@ class TEXT_OT_open_recent_actions(Operator):
             'MOVE_UP': 'Move Up',
             'MOVE_DOWN': 'Move Down',
             'OPEN_SELECTED': 'Open the selected file',
-            'RECENT_CLEANUP': 'Remove all invalid files from the list.\n\nMissing items: {missing}',
-            'REMOVE_DUPLICATES': 'Remove duplicate items from the list.\n\nDuplicate items: {duplicates}',
+            'RECENT_CLEANUP': 'Remove all invalid files from the list.\n\nMissing path: {missing}',
+            'REMOVE_DUPLICATES': 'Remove duplicate items from the list.\n\nDuplicate path: {duplicates}',
             'OPEN_FOLDER': 'Open the folder of the selected file in Windows Explorer.\n\n{filepath}',
         }
 
@@ -631,12 +631,10 @@ class TEXT_MT_open_recent(Menu):
         if len(imported_files) == 0:
             layout.label(text="No Recent Files")
 
+        layout.separator()
         if missing_paths:
-            row = layout.row()
-            layout.separator()
-            row.operator("text.recent_actions", icon='PANEL_CLOSE', text="Clear Missing Paths").action = 'RECENT_CLEANUP'
+            layout.operator("text.recent_actions", icon='PANEL_CLOSE', text="Clear Missing Paths").action = 'RECENT_CLEANUP'
         else:
-            layout.separator()
             layout.operator("text.clear_recent", icon="TRASH", text="Clear Recent Files List")
 
 

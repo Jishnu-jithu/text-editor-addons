@@ -31,7 +31,7 @@ bl_info = {
     "name": "Open Recent",
     "author": "Jithu",
     "version": (1, 3),
-    "blender": (4, 0, 0),
+    "blender": (2, 83, 0),
     "location": "Text Editor > Text > Open Recent",
     "description": "Provides a quick and easy way to access recently opened files in the Text Editor",
     "category": "Text Editor"

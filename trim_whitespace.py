@@ -4,7 +4,7 @@ bl_info = {
     "name": "Trim Whitespace",
     "author": "Jishnu jithu",
     "version": (1, 0),
-    "blender": (3, 0, 0),
+    "blender": (2, 80, 0),
     "description": "Removes all trailing whitespace characters in the current text block.",
     "location": "Text Editor > Context Menu > Trim Whitespace",
     "category": "Text Editor"

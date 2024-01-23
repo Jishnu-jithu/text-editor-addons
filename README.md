@@ -11,7 +11,7 @@
 
 ## Code Map
 
-![code_map](https://github.com/Jishnu-jithu/code-map/blob/e51b3e5f6c56133e133b6b50843cb26f84886ced/gif/code_map.gif)
+![code_map](Videos/code_map.gif)
 
 **Features:**
 - Enhances the coding experience in Blender by providing a navigational interface for your code.
@@ -55,7 +55,7 @@
 
 ## Open Recent
 
-<img src="https://github.com/Jishnu-jithu/text-editor-addons/blob/ddfb7b0192ae661e178c44f8f0ac403b2b47a690/Videos/Open%20Recent%20v1.3.gif">
+<img src="Videos/Open%20Recent%20v1.3.gif">
 
 **Features:** 
 - Manage filenames in the open recent menu via Sidebar > Open Recent Panel (UI List)

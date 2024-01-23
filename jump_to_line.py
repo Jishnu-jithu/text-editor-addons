@@ -4,7 +4,7 @@ bl_info = {
     "name": "Jump to line",
     "author": "Jishnu jithu",
     "version": (1, 0),
-    "blender": (3, 0, 0),
+    "blender": (2, 80, 0),
     "location": "Text editor > Sidebar > Go to line",
     "description": "Go to line",
     "doc_url": "",

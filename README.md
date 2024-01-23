@@ -9,6 +9,23 @@
 
 ------------
 
+## Code Map
+
+![code_map](https://github.com/Jishnu-jithu/code-map/blob/e51b3e5f6c56133e133b6b50843cb26f84886ced/gif/code_map.gif)
+
+**Features:**
+- Enhances the coding experience in Blender by providing a navigational interface for your code.
+- Traverse through classes, methods, and functions easily, making your coding workflow smoother and more efficient.
+- Maintains a similar user interface for familiarity with users of the Pistiwique Pie Text Editor addon.
+
+**Usage:**
+- Open the Code Map panel through the Blender UI.
+- Alternatively, use the `` ` `` (backtick) shortcut key to open the Code Map popup for quick access.
+
+*[Code Map](https://github.com/Jishnu-jithu/code-map) is inspired by the functionality of [Pistiwique Pie Text Editor](https://github.com/pistiwique/pistiwique_pie_text_editor) addon, providing a modernized and updated experience for Blender 2.8 and later.*
+
+------------
+
 ## Find & Replace Popup
 
 ![find](https://github.com/Jishnu-jithu/text-editor-addons/assets/145359279/a4b69aa1-abd7-42cc-8084-6362716e2c01)

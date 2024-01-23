@@ -16,7 +16,6 @@
 #
 # ##### END GPL LICENSE BLOCK #####
 
-
 import bpy
 import os
 import subprocess
@@ -25,7 +24,6 @@ import time
 from bpy.app.handlers import persistent
 from bpy_extras.io_utils import ImportHelper, ExportHelper
 from bpy.types import PropertyGroup, Operator, Panel, Menu, UIList
-
 
 bl_info = {
     "name": "Open Recent",
@@ -36,7 +34,6 @@ bl_info = {
     "description": "Provides a quick and easy way to access recently opened files in the Text Editor",
     "category": "Text Editor"
 }
-
 
 # ---------------------------
 #    Function Definitions

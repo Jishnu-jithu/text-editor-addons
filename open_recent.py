@@ -16,6 +16,7 @@
 #
 # ##### END GPL LICENSE BLOCK #####
 
+
 import bpy
 import os
 import subprocess
@@ -24,27 +25,44 @@ import time
 from bpy.app.handlers import persistent
 from bpy_extras.io_utils import ImportHelper, ExportHelper
 from bpy.types import PropertyGroup, Operator, Panel, Menu, UIList
+from bpy.props import (
+    BoolProperty,
+    CollectionProperty,
+    IntProperty,
+    StringProperty,
+    EnumProperty,
+    PointerProperty
+)
+
 
 bl_info = {
     "name": "Open Recent",
     "author": "Jithu",
-    "version": (1, 3),
-    "blender": (2, 83, 0),
+    "version": (1, 4),
+    "blender": (2, 80, 0),
     "location": "Text Editor > Text > Open Recent",
     "description": "Provides a quick and easy way to access recently opened files in the Text Editor",
     "category": "Text Editor"
 }
+
 
 # ---------------------------
 #    Function Definitions
 # ---------------------------
 
 
+class TEXT_PG_properties(PropertyGroup):
+    recent_list: CollectionProperty(type=PropertyGroup)
+    recent_list_index: IntProperty(name="Recent list index")
+    display_folder: BoolProperty(name="Filter __init__.py file", description="Display Folder Name for __init__.py files", default=True)
+
+
 def get_recent_list():
     scene = bpy.context.scene
-    if hasattr(scene, 'recent_list') and hasattr(scene, 'recent_list_index'):
-        list = scene.recent_list
-        index = scene.recent_list_index
+    props = scene.recent_list_props
+    if hasattr(scene, 'recent_list_props'):
+        list = props.recent_list
+        index = props.recent_list_index
     else:
         list = []
         index = 0
@@ -54,6 +72,7 @@ def get_recent_list():
 
 def update_list():
     list, index, txt_path = get_recent_list()
+    props = bpy.context.scene.recent_list_props
 
     if os.path.exists(txt_path):
         # Read the file and get the unique paths
@@ -62,11 +81,11 @@ def update_list():
             valid_paths = sorted(set(lines), key=lines.index)
 
         # Clear the UI list
-        bpy.context.scene.recent_list.clear()
+        props.recent_list.clear()
 
         # Add the unique paths back to the UI list
         for line in valid_paths:
-            bpy.context.scene.recent_list.add().name = line.strip()
+            props.recent_list.add().name = line.strip()
 
 
 # --------------------------
@@ -80,44 +99,55 @@ class TEXT_OT_open_mainfile(Operator, ImportHelper):
     bl_description = "Open a new text data-block"
     bl_options = {'REGISTER', 'UNDO'}
 
-    filter_python: bpy.props.BoolProperty(default=True, options={'HIDDEN'})
-    filter_folder: bpy.props.BoolProperty(default=True, options={'HIDDEN'})
-    hide_props_region: bpy.props.BoolProperty(default=True, options={'HIDDEN'})
+    # Enable selection of multiple files
+    files: CollectionProperty(type=PropertyGroup)
+    directory: StringProperty(subtype='DIR_PATH')
+
+    filter_python: BoolProperty(default=True, options={'HIDDEN'})
+    filter_folder: BoolProperty(default=True, options={'HIDDEN'})
+    hide_props_region: BoolProperty(default=True, options={'HIDDEN'})
 
     def invoke(self, context, event):
-        # Check if there is an active text block
-        if bpy.context.space_data.text:
-            self.filepath = bpy.context.space_data.text.filepath
-
         context.window_manager.fileselect_add(self)
         return {'RUNNING_MODAL'}
 
     def execute(self, context):
         list, index, txt_path = get_recent_list()
 
-        # Try to read the file
-        try:
-            with open(self.filepath, 'r') as f:
-                file_data = f.read()
-        except Exception as e:
-            self.report({'ERROR'}, f"Could not open file \"{self.filepath}\": {str(e)}")
-            return {'CANCELLED'}
+        for file in self.files:
+            filepath = os.path.join(self.directory, file.name)
 
-        bpy.ops.text.open(filepath=self.filepath)
+            # Try to read the file
+            try:
+                with open(filepath, 'r') as f:
+                    file_data = f.read()
+            except Exception as e:
+                self.report(
+                    {'ERROR'},
+                    f"Could not open file \"{filepath}\": {str(e)}")
+                continue
 
-        imported_files = []
-        if os.path.exists(txt_path):
-            with open(txt_path, 'r') as txt_file:
-                imported_files = [filepath.strip() for filepath in txt_file.readlines()]
+            bpy.ops.text.open(filepath=filepath)
 
-        # Remove the file if it's already in the list
-        imported_files = [filepath for filepath in imported_files if filepath != self.filepath]
+            imported_files = []
+            if os.path.exists(txt_path):
+                with open(txt_path, 'r') as txt_file:
+                    imported_files = [filepath.strip() for filepath in txt_file.readlines()]
 
-        # Add the file to the top of the list
-        imported_files.insert(0, self.filepath)
-        with open(txt_path, 'w') as txt_file:
-            for filepath in imported_files:
-                txt_file.write(filepath + '\n')
+            # Loop over all selected files
+            for file in self.files:
+                filepath = os.path.join(self.directory, file.name)
+
+                # Remove the file if it's already in the list
+                imported_files = [existing_filepath for existing_filepath in imported_files if existing_filepath != filepath]
+
+                # Add the file to the top of the list
+                imported_files.insert(0, filepath)
+
+            # Write the updated list back to the file
+            with open(txt_path, 'w') as txt_file:
+                for filepath in imported_files:
+                    txt_file.write(filepath + '\n')
 
         # Update the UIList
         update_list()
@@ -130,7 +160,7 @@ class TEXT_OT_open_file(Operator):
     bl_description = "Open Text"
     bl_options = {'REGISTER', 'UNDO'}
 
-    filepath: bpy.props.StringProperty()
+    filepath: StringProperty()
 
     @classmethod
     def description(cls, context, properties):
@@ -199,7 +229,7 @@ class TEXT_OT_save_mainfile(Operator, ExportHelper):
     bl_options = {'REGISTER', 'UNDO'}
 
     filename_ext = ".py"
-    filter_glob: bpy.props.StringProperty(default="*.py", options={'HIDDEN'})
+    filter_glob: StringProperty(default="*.py", options={'HIDDEN'})
 
     def invoke(self, context, event):
         st = context.space_data.text
@@ -250,7 +280,7 @@ class TEXT_OT_save_as_mainfile(Operator, ExportHelper):
     bl_options = {'REGISTER', 'UNDO'}
 
     filename_ext = ".py"
-    filter_glob: bpy.props.StringProperty(default="*.py", options={'HIDDEN'})
+    filter_glob: StringProperty(default="*.py", options={'HIDDEN'})
 
     def invoke(self, context, event):
         st = context.space_data.text
@@ -295,8 +325,8 @@ class TEXT_OT_clear_recent(Operator):
     """Operator for deleting a preset."""
 
     bl_idname = "text.clear_recent"
-    bl_label = "Clear Recent Files List"
-    bl_description = "Clear The Recent Files List"
+    bl_label = "Remove All" if bpy.app.version >= (4, 1, 0) else "Clear Recent Files List"
+    bl_description = "Clear the recent files list"
     bl_options = {'INTERNAL'}
 
     def invoke(self, context, event):
@@ -305,9 +335,9 @@ class TEXT_OT_clear_recent(Operator):
         self.first_mouse_y = event.mouse_y
 
         # Warp the mouse to some xy coords
-        context.window.cursor_warp(int(context.window.width/2), int((context.window.height/2) + 60))
+        context.window.cursor_warp(int((context.window.width / 2) + 60), int((context.window.height / 2) + 15))
 
-        # Now invoke
+        # Invoke popup
         wm = context.window_manager
         result = wm.invoke_props_dialog(self, width=300)
 
@@ -317,10 +347,8 @@ class TEXT_OT_clear_recent(Operator):
         return result
 
     def draw(self, context):
-        """Draw the operator."""
         layout = self.layout
-
-        layout.label(text="Remove all items from the Recent Files list")
+        layout.label(text="Remove all items from the recent files list")
 
     def execute(self, context):
         list, index, txt_path = get_recent_list()
@@ -339,7 +367,7 @@ class TEXT_OT_open_recent_actions(Operator):
     bl_options = {'REGISTER', 'UNDO'}
 
 
-    action: bpy.props.EnumProperty(items=[
+    action: EnumProperty(items=[
         ('ADD', 'Add', ''),
         ('REMOVE', 'Remove', ''),
         ('MOVE_UP', 'Move Up', ''),
@@ -353,7 +381,7 @@ class TEXT_OT_open_recent_actions(Operator):
 
     @classmethod
     def poll(cls, context):
-        return context.scene.recent_list
+        return context.scene.recent_list_props.recent_list
 
 
     @classmethod
@@ -413,6 +441,7 @@ class TEXT_OT_open_recent_actions(Operator):
 
     def add_path(self, context):
         st = context.space_data.text
+        props = context.scene.recent_list_props
 
         if st is None:
             self.report({'WARNING'}, "No active text data-block")
@@ -421,10 +450,10 @@ class TEXT_OT_open_recent_actions(Operator):
         self.filepath = st.filepath
 
         # Add the file path to the UI list
-        new_item = context.scene.recent_list.add()
+        new_item = props.recent_list.add()
         new_item.name = self.filepath
-        context.scene.recent_list.move(len(context.scene.recent_list)-1, 0)
-        context.scene.recent_list_index = 0
+        props.recent_list.move(len(props.recent_list)-1, 0)
+        props.recent_list_index = 0
 
         txt_path = os.path.join(os.path.expanduser("~/Documents/Open Recent"), "open_recent.txt")
         imported_files = []
@@ -443,13 +472,14 @@ class TEXT_OT_open_recent_actions(Operator):
 
     def remove_path(self, context):
         list, index, txt_path = get_recent_list()
+        props = context.scene.recent_list_props
 
         # Get the path to be removed
         path_to_remove = list[index].name
         list.remove(index)
 
         if index > 0:
-            context.scene.recent_list_index = index - 1
+            props.recent_list_index = index - 1
 
         if os.path.exists(txt_path):
             with open(txt_path, 'r') as txt_file:
@@ -464,17 +494,18 @@ class TEXT_OT_open_recent_actions(Operator):
 
     def move_path(self, context, direction):
         list, index, txt_path = get_recent_list()
+        props = context.scene.recent_list_props
 
         if self.action == 'MOVE_UP' and index > 0:
             list.move(index, index - 1)
-            context.scene.recent_list_index = index - 1
+            props.recent_list_index = index - 1
 
             # Move the corresponding item up in open_recent.txt
             self.move_item_in_file(index, index - 1)
 
         elif self.action == 'MOVE_DOWN' and index < len(list) - 1:
             list.move(index, index + 1)
-            context.scene.recent_list_index = index + 1
+            props.recent_list_index = index + 1
 
             # Move the corresponding item up in open_recent.txt
             self.move_item_in_file(index, index + 1)
@@ -497,16 +528,17 @@ class TEXT_OT_open_recent_actions(Operator):
 
 
     def open_selected(self, context):
-        index = context.scene.recent_list_index
-        selected_item = context.scene.recent_list[index]
+        props = context.scene.recent_list_props
+        index = props.recent_list_index
+        selected_item = props.recent_list[index]
         filepath = selected_item.name
 
         if os.path.exists(filepath):
             bpy.ops.text.open(filepath=filepath)
 
             # Move the selected item to the top of the list
-            context.scene.recent_list.move(index, 0)
-            context.scene.recent_list_index = 0
+            props.recent_list.move(index, 0)
+            props.recent_list_index = 0
 
             # Move the corresponding item in open_recent.txt
             self.move_item_in_file(index, 0)
@@ -518,6 +550,7 @@ class TEXT_OT_open_recent_actions(Operator):
 
     def recent_cleanup(self, context):
         list, index, txt_path = get_recent_list()
+        props = context.scene.recent_list_props
 
         valid_paths = [item.name for item in list if os.path.isfile(item.name)]
         missing_paths = set(item.name for item in list) - set(valid_paths)
@@ -530,7 +563,7 @@ class TEXT_OT_open_recent_actions(Operator):
                 list.add().name = path
 
             if index >= len(list):
-                context.scene.recent_list_index = len(list) - 1
+                props.recent_list_index = len(list) - 1
 
             txt_path = os.path.join(os.path.expanduser("~/Documents/Open Recent"), "open_recent.txt")
             with open(txt_path, 'w') as txt_file:
@@ -561,7 +594,7 @@ class TEXT_OT_open_recent_actions(Operator):
             list.add().name = path
 
         if index >= len(list):
-            context.scene.recent_list_index = len(list) - 1
+            props.recent_list_index = len(list) - 1
 
         with open(txt_path, 'w') as txt_file:
             for filepath in valid_paths:
@@ -594,6 +627,7 @@ class TEXT_MT_open_recent(Menu):
     def draw(self, context):
         layout = self.layout
         scene = context.scene
+        props = scene.recent_list_props
         list, index, txt_path = get_recent_list()
 
         valid_paths = [item.name for item in list if os.path.isfile(item.name)]
@@ -610,11 +644,11 @@ class TEXT_MT_open_recent(Menu):
             # Display the folder name if the file ends with '__init__.py'
             display_name = os.path.basename(filepath)
 
-            if scene.display_folder and display_name.lower().endswith('__init__.py'):
+            if props.display_folder and display_name.lower().endswith('__init__.py'):
                 folder_name = os.path.basename(os.path.dirname(filepath))
                 display_name = folder_name.lower().replace(" ", "_") + ".py"
 
-            elif scene.display_folder:
+            elif props.display_folder:
                 display_name = display_name.lower().replace(" ", "_")
 
                 # Ensure it ends with ".py" if it doesn't already
@@ -627,12 +661,12 @@ class TEXT_MT_open_recent(Menu):
 
         if len(imported_files) == 0:
             layout.label(text="No Recent Files")
-
-        layout.separator()
-        if missing_paths:
-            layout.operator("text.recent_actions", icon='PANEL_CLOSE', text="Clear Missing Paths").action = 'RECENT_CLEANUP'
         else:
-            layout.operator("text.clear_recent", icon="TRASH", text="Clear Recent Files List")
+            layout.separator()
+            if missing_paths:
+                layout.operator("text.recent_actions", icon='PANEL_CLOSE', text="Clear Missing Paths").action = 'RECENT_CLEANUP'
+            else:
+                layout.operator("text.clear_recent", icon="TRASH", text="Clear Recent Files List")
 
 
 class TEXT_MT_cleanup_menu(Menu):
@@ -668,11 +702,12 @@ class TEXT_UL_open_recent(UIList):
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
         # Display the folder name if the file ends with '__init__.py'
         display_name = os.path.basename(item.name)
+        props = context.scene.recent_list_props
 
-        if context.scene.display_folder and display_name.lower().endswith('__init__.py'):
+        if props.display_folder and display_name.lower().endswith('__init__.py'):
             folder_name = os.path.basename(os.path.dirname(item.name))
             display_name = folder_name.lower().replace(" ", "_") + ".py"
-        elif context.scene.display_folder:
+        elif props.display_folder:
             display_name = display_name.lower().replace(" ", "_")
 
             if not display_name.endswith(".py"):
@@ -682,7 +717,7 @@ class TEXT_UL_open_recent(UIList):
 
 
 # ---------------------------
-#            Panel
+#           Panel
 # ---------------------------
 
 
@@ -695,16 +730,16 @@ class TEXT_PT_open_recent(Panel):
     def draw(self, context):
         layout = self.layout
         scene = context.scene
+        props = scene.recent_list_props
         st = context.space_data
-        sdt = st.text
         text = st.text
 
         row = layout.row()
-        row.template_list("TEXT_UL_open_recent", "", context.scene, "recent_list", context.scene, "recent_list_index", rows=8)
+        row.template_list("TEXT_UL_open_recent", "", props, "recent_list", props, "recent_list_index", rows=8)
 
         col = row.column(align=True)
         col.scale_y = 1.1
-        if text and not any(item.name == text.filepath for item in scene.recent_list) and not sdt.is_in_memory:
+        if text and not any(item.name == text.filepath for item in props.recent_list) and not text.is_in_memory:
             sub = col.column(align=True)
             sub.operator("text.recent_actions", icon='ADD', text="").action = 'ADD'
         else:
@@ -725,11 +760,11 @@ class TEXT_PT_open_recent(Panel):
         col.operator("text.recent_actions", icon='FOLDER_REDIRECT', text="").action = 'OPEN_FOLDER'
         col.separator()
 
-        if scene.recent_list:
-            col.prop(scene, "display_folder", text="", icon="FILTER", toggle=True)
+        if props.recent_list:
+            col.prop(props, "display_folder", text="", icon="FILTER", toggle=True)
         else:
             col.enabled = False
-            col.prop(scene, "display_folder", text="", icon="FILTER", toggle=True)
+            col.prop(props, "display_folder", text="", icon="FILTER", toggle=True)
 
         layout.operator("text.recent_actions", text="Open Selected").action = 'OPEN_SELECTED'
 
@@ -780,7 +815,7 @@ def recent_header(self, context):
 
     layout.separator_spacer()
 
-    """
+
     row = layout.row(align=True)
     row.prop(st, "show_line_numbers", text="")
     row.prop(st, "show_word_wrap", text="")
@@ -788,7 +823,7 @@ def recent_header(self, context):
     syntax = row.row(align=True)
     syntax.active = is_syntax_highlight_supported
     syntax.prop(st, "show_syntax_highlight", text="")
-    """
+
 
 def recent_text_menu(self, context):
     layout = self.layout
@@ -868,6 +903,7 @@ class TEXT_MT_editor_menus(Menu):
 @persistent
 def load_list(dummy):
     list, index, txt_path = get_recent_list()
+    props = bpy.context.scene.recent_list_props
 
     if os.path.exists(txt_path):
         # Read the file and get the valid paths
@@ -876,17 +912,19 @@ def load_list(dummy):
             valid_paths = sorted(set(lines), key=lines.index)
 
         # Clear the UI list
-        bpy.context.scene.recent_list.clear()
+        props.recent_list.clear()
 
         # Add the valid paths back to the UI list
         for line in valid_paths:
-            bpy.context.scene.recent_list.add().name = line.strip()
+            props.recent_list.add().name = line.strip()
 
 
 # ================================================================================ #
 
 
 classes = (
+    TEXT_PG_properties,
+
     TEXT_OT_open_mainfile,
     TEXT_OT_open_file,
     TEXT_OT_save_mainfile,
@@ -915,11 +953,9 @@ def register():
     if not hasattr(bpy.types, 'TEXT_MT_editor_menus'):
         bpy.utils.register_class(TEXT_MT_editor_menus)
 
-    bpy.app.handlers.load_post.append(load_list)
+    bpy.types.Scene.recent_list_props = PointerProperty(type=TEXT_PG_properties)
 
-    bpy.types.Scene.recent_list = bpy.props.CollectionProperty(type=bpy.types.PropertyGroup)
-    bpy.types.Scene.recent_list_index = bpy.props.IntProperty(name="Recent list index")
-    bpy.types.Scene.display_folder = bpy.props.BoolProperty(name="Filter __init__.py file", description="Display Folder Name for __init__.py files", default=True)
+    bpy.app.handlers.load_post.append(load_list)
 
     # handle the keymap
     wm = bpy.context.window_manager
@@ -948,17 +984,16 @@ def unregister():
     bpy.types.TEXT_HT_header.draw = editor_header # Load original header
     bpy.types.TEXT_MT_text.draw = editor_menu # Load original menu
 
-    bpy.app.handlers.load_post.remove(load_list)
-
     # Remove the properties
-    del bpy.types.Scene.recent_list
-    del bpy.types.Scene.recent_list_index
-    del bpy.types.Scene.display_folder
+    del bpy.types.Scene.recent_list_props
 
     # Remove the keymaps
     for km, kmi in addon_keymaps:
         km.keymap_items.remove(kmi)
     addon_keymaps.clear()
+
+    bpy.app.handlers.load_post.remove(load_list)
+
 
 if __name__ == "__main__":
     register()

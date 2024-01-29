@@ -1,8 +1,10 @@
 **Add-on (Name):**
 - [ ] Character Count
-- [ ] Find & Replace Pop-up
+- [ ] Code Map
+- [ ] Find & Replace
 - [ ] Jump to Line
 - [x] Open Recent
+- [x] Trim Whitespace
 
 **Describe the bug**
 - clear and concise description of what the bug is.

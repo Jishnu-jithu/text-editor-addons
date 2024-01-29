@@ -35,17 +35,6 @@ from bpy.props import (
 )
 
 
-bl_info = {
-    "name": "Open Recent",
-    "author": "Jithu",
-    "version": (1, 4),
-    "blender": (2, 80, 0),
-    "location": "Text Editor > Text > Open Recent",
-    "description": "Provides a quick and easy way to access recently opened files in the Text Editor",
-    "category": "Text Editor"
-}
-
-
 # ---------------------------
 #    Function Definitions
 # ---------------------------
@@ -727,6 +716,11 @@ class TEXT_PT_open_recent(Panel):
     bl_region_type = 'UI'
     bl_category = "Text"
 
+    @classmethod
+    def poll(cls, context):
+        prefs = bpy.context.preferences.addons[__package__].preferences
+        return prefs.enable_open_recent_panel
+
     def draw(self, context):
         layout = self.layout
         scene = context.scene
@@ -836,18 +830,20 @@ def recent_text_menu(self, context):
     layout.operator("text.new", text="New", icon='FILE_NEW')
 
     layout.operator("text.open_mainfile", text="Open...", icon='FILE_FOLDER')
+    prefs = bpy.context.preferences.addons[__package__].preferences
 
-    imported_files = []
-    if os.path.exists(txt_path):
-        with open(txt_path, 'r') as txt_file:
-            imported_files = txt_file.readlines()
+    if prefs.enable_open_recent:
+        imported_files = []
+        if os.path.exists(txt_path):
+            with open(txt_path, 'r') as txt_file:
+                imported_files = txt_file.readlines()
 
-    if len(imported_files) > 0:
-        layout.menu("TEXT_MT_open_recent")
-    else:
-        row = layout.row()
-        row.enabled = False
-        row.menu("TEXT_MT_open_recent")
+        if len(imported_files) > 0:
+            layout.menu("TEXT_MT_open_recent")
+        else:
+            row = layout.row()
+            row.enabled = False
+            row.menu("TEXT_MT_open_recent")
 
     if text:
         layout.separator()
@@ -902,21 +898,24 @@ class TEXT_MT_editor_menus(Menu):
 # Load UIList On Startup
 @persistent
 def load_list(dummy):
-    list, index, txt_path = get_recent_list()
-    props = bpy.context.scene.recent_list_props
+    prefs = bpy.context.preferences.addons[__package__].preferences
 
-    if os.path.exists(txt_path):
-        # Read the file and get the valid paths
-        with open(txt_path, 'r') as txt_file:
-            lines = txt_file.readlines()
-            valid_paths = sorted(set(lines), key=lines.index)
+    if prefs.enable_open_recent:
+        list, index, txt_path = get_recent_list()
+        props = bpy.context.scene.recent_list_props
 
-        # Clear the UI list
-        props.recent_list.clear()
+        if os.path.exists(txt_path):
+            # Read the file and get the valid paths
+            with open(txt_path, 'r') as txt_file:
+                lines = txt_file.readlines()
+                valid_paths = sorted(set(lines), key=lines.index)
 
-        # Add the valid paths back to the UI list
-        for line in valid_paths:
-            props.recent_list.add().name = line.strip()
+            # Clear the UI list
+            props.recent_list.clear()
+
+            # Add the valid paths back to the UI list
+            for line in valid_paths:
+                props.recent_list.add().name = line.strip()
 
 
 # ================================================================================ #
@@ -934,7 +933,7 @@ classes = (
     TEXT_MT_cleanup_menu,
 
     TEXT_UL_open_recent,
-    TEXT_PT_open_recent,
+    #TEXT_PT_open_recent,
     TEXT_OT_clear_recent,
     TEXT_OT_open_recent_actions,
 )
@@ -946,6 +945,8 @@ addon_keymaps = []
 def register():
     for cls in classes:
         bpy.utils.register_class(cls)
+    
+    bpy.app.timers.register(lambda: load_list(None))
 
     bpy.types.TEXT_HT_header.draw = recent_header
     bpy.types.TEXT_MT_text.draw = recent_text_menu
@@ -994,6 +995,5 @@ def unregister():
 
     bpy.app.handlers.load_post.remove(load_list)
 
-
-if __name__ == "__main__":
-    register()
+    bpy.utils.unregister_class(TEXT_PT_open_recent)
+    

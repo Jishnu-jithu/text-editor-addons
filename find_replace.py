@@ -2,8 +2,8 @@
 #
 #  This program is free software; you can redistribute it and/or
 #  modify it under the terms of the GNU General Public License
-#  as published by the Free Software Foundation; version 3
-#  of the License.
+#  as published by the Free Software Foundation; either version 2
+#  of the License, or (at your option) any later version.
 #
 #  This program is distributed in the hope that it will be useful,
 #  but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -16,21 +16,14 @@
 #
 # ##### END GPL LICENSE BLOCK #####
 
+
 import bpy
 
 from bpy.types import Operator
 
-bl_info = {
-    "name": "Find replace popup",
-    "author": "jithu",
-    "version": (1, 1),
-    "blender": (3, 0, 0),
-    "location": "Text Editor > Find & Replace",
-    "description": "Find replace popup",
-    "category": "Text Editor"
-}
 
 # ------------------------------
+
 
 class TEXT_OT_find_previous(Operator):
     bl_idname = "text.find_previous"
@@ -107,7 +100,9 @@ class TEXT_OT_find_previous(Operator):
 
         return {'FINISHED'}
 
+
 # ------------------------------
+
 
 class TEXT_OT_find_replace(Operator):
     bl_idname = "text.find_replace"
@@ -118,7 +113,7 @@ class TEXT_OT_find_replace(Operator):
 
     def invoke(self, context, event):
         st = context.space_data
-        prefs = bpy.context.preferences.addons[__name__].preferences
+        prefs = bpy.context.preferences.addons[__package__].preferences
 
         # Check the settings before calling the operators
         if prefs.enable_find_set_selected:
@@ -177,7 +172,7 @@ class TEXT_OT_find_replace(Operator):
     def display_word_count(self, context, col, find):
         text = context.space_data.text
         text_data = context.edit_text
-        prefs = bpy.context.preferences.addons[__name__].preferences
+        prefs = bpy.context.preferences.addons[__package__].preferences
 
         total_count, find_count = self.count_occurrences(text, text_data, find)
 
@@ -209,51 +204,29 @@ class TEXT_OT_find_replace(Operator):
 
         return total_count, find_count
 
+
 # ------------------------------
+
 
 def draw_func(self, context):
     layout = self.layout
-    layout.operator("text.find_replace", text="Find & Replace Popup")
+    prefs = bpy.context.preferences.addons[__package__].preferences
+
+    if prefs.enable_find_replace:
+        layout.operator("text.find_replace", text="Find & Replace Popup")
+
 
 # ------------------------------
 
-class FIND_REPLACE_Preferences(bpy.types.AddonPreferences):
-    bl_idname = __name__
-
-    enable_find_set_selected: bpy.props.BoolProperty(
-        name="Text Selection for Finding",
-        description="If enabled, the selected text will be automatically filled into the 'Find' field when the 'Find & Replace' popup is invoked.",
-        default=True
-    )
-
-    enable_replace_set_selected: bpy.props.BoolProperty(
-        name="Text Selection for Replacement",
-        description="If enabled, the selected text will be automatically filled into the 'Replace' field when the 'Find & Replace' popup is invoked.",
-        default=True
-    )
-
-    display_count_label: bpy.props.BoolProperty(
-        name="Display Count Label",
-        description="If enabled, the count of the found text will be displayed on popup.",
-        default=True
-    )
-
-    def draw(self, context):
-        layout = self.layout
-
-        layout.prop(self, "enable_find_set_selected")
-        layout.prop(self, "enable_replace_set_selected")
-        layout.prop(self, "display_count_label")
-
-# ------------------------------
 
 classes = [
     TEXT_OT_find_previous,
     TEXT_OT_find_replace,
-    FIND_REPLACE_Preferences
 ]
 
+
 addon_keymaps = []
+
 
 def register():
     for cls in classes:
@@ -278,6 +251,7 @@ def register():
         kmi = km.keymap_items.new('text.find', 'DOWN_ARROW', 'PRESS', alt=True)
         addon_keymaps.append((km, kmi))
 
+
 def unregister():
     for cls in classes:
         bpy.utils.unregister_class(cls)
@@ -287,6 +261,3 @@ def unregister():
     for km, kmi in addon_keymaps:
         km.keymap_items.remove(kmi)
     addon_keymaps.clear()
-
-if __name__ == "__main__":
-    register()

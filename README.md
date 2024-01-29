@@ -1,74 +1,47 @@
-## Character Count:
+# Blender Text Editor Addons
+
+Welcome to the collection of Blender addons designed to enhance your coding experience. These addons have been developed with a focus on improving efficiency and providing a more streamlined workflow in the Blender Text Editor.
+
+## Character Count Addon
 
 ![count](gif/character_count.gif)
 
-### Features:
+Shows Line Number, Column Number, and Total Character Count. Additionally, it displays the character count for the selected text.
 
-- Shows Line Number, Column Number, and Total Character Count
-- Displays Character Count for Selected Text
-
-------------
-
-## Code Map
+## Code Map Addon
 
 ![code_map](gif/code_map.gif)
 
-**Features:**
-- Enhances the coding experience in Blender by providing a navigational interface for your code.
-- Traverse through classes, methods, and functions easily, making your coding workflow smoother and more efficient.
-- Maintains a similar user interface for familiarity with users of the Pistiwique Pie Text Editor addon.
+Enhances the coding experience by providing a navigational interface for your code. Easily traverse through classes, methods, and functions, making your coding workflow smoother. Inspired by the functionality of Pistiwique Pie Text Editor, Code Map offers a modernized and updated experience for Blender 2.8 and later.
 
 **Usage:**
 - Open the Code Map panel through the Blender UI.
 - Alternatively, use the `` ` `` (backtick) shortcut key to open the Code Map popup for quick access.
 
-*[Code Map](https://github.com/Jishnu-jithu/code-map) is inspired by the functionality of [Pistiwique Pie Text Editor](https://github.com/pistiwique/pistiwique_pie_text_editor) addon, providing a modernized and updated experience for Blender 2.8 and later.*
-
-------------
-
-## Find & Replace Popup
+## Find & Replace Popup Addon
 
 ![find](gif/find_replace.gif)
 
-### Features:
-
-- Find Previous
-- Add Selected Word to Find and Replace Field
-- Display Find Word Count
-- Use Arrow Keys for Navigation
+Introduces a Find & Replace popup with features like finding previous occurrences, adding selected words to the Find and Replace field, displaying find word count, and navigation using arrow keys.
 
 **Usage:**
-- Open the popup with `F1`
-- Customize the shortcut in `Edit > Find Replace Popup > Right Click > Change Shortcut`
+- Open the popup with `F1`.
+- Customize the shortcut in `Edit Menu > Find Replace Popup > Right Click > Change Shortcut`.
 
-------------
-
-## Jump to Line
+## Jump to Line Addon
 
 ![292867176-2895cb7f-f12b-4a93-b84](gif/jump_to_line.gif)
 
-**Features:**
-- Navigate quickly to a specific line in the text editor.
-- Accessible through the text editor header
+Allows quick navigation to a specific line in the text editor. Accessible through the text editor header.
 
-------------
+## Open Recent Addon
 
-## Open Recent
+![open_recent](gif/open_recent.gif)
 
-<img src="gif/open_recent.gif">
+Designed for managing recently opened script files in the Blender Text Editor. This addon adds functionality to `Text > Open Recent` and the Sidebar > Open Recent Panel (UI List) to facilitate easy management of open recent items. You can add the current script to the open recent menu, remove items, and rearrange them by moving up or down. For clarity, this addon includes a toggle to display the filename **`__init__.py`** as the folder's name in the Open Recent menu.
 
-**Features:** 
-- Manage filenames in the open recent menu via Sidebar > Open Recent Panel (UI List)
-- Add, remove, move up, and down filenames through the UI list
-- Change the filename **`__init__.py`** to the folder's name for better understanding
-
-------------
-
-## Trim Whitespace
+## Trim Whitespace Addon
 
 ![295889542-e54e2801-016e-4c45-bb4](gif/trim_whitespace.gif)
 
-**Features:**
-- Removes all trailing whitespace characters in the current text block.
-- Accessible through the Text Editor context menu: `Text Editor > Context Menu > Trim Whitespace`
-- Provides information on the number of removed trailing whitespace characters.
+Removes all trailing whitespace characters in the current text block. Accessible through the Text Editor context menu: `Text Editor > Context Menu > Trim Whitespace`. Provides information on the number of removed trailing whitespace characters.

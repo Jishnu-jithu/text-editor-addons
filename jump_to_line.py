@@ -57,7 +57,3 @@ def register():
 def unregister():
     del bpy.types.Scene.line_number
     bpy.types.TEXT_HT_header.remove(draw_line)
-
-
-if __name__ == "__main__":
-    register()

@@ -1,4 +1,4 @@
-# Blender Text Editor Addons
+# Textify
 
 Welcome to the collection of Blender addons designed to enhance your coding experience. These addons have been developed with a focus on improving efficiency and providing a more streamlined workflow in the Blender Text Editor.
 

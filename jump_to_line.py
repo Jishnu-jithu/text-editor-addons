@@ -2,8 +2,8 @@
 #
 #  This program is free software; you can redistribute it and/or
 #  modify it under the terms of the GNU General Public License
-#  as published by the Free Software Foundation; version 3
-#  of the License.
+#  as published by the Free Software Foundation; either version 2
+#  of the License, or (at your option) any later version.
 #
 #  This program is distributed in the hope that it will be useful,
 #  but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -16,18 +16,9 @@
 #
 # ##### END GPL LICENSE BLOCK #####
 
+
 import bpy
 
-bl_info = {
-    "name": "Jump to line",
-    "author": "Jishnu jithu",
-    "version": (1, 0),
-    "blender": (2, 80, 0),
-    "location": "Text editor > Sidebar > Go to line",
-    "description": "Go to line",
-    "doc_url": "",
-    "category": "Scripting",
-}
 
 def update_line_number(self, context):
     text_editor = context.space_data.text
@@ -36,7 +27,8 @@ def update_line_number(self, context):
 
         line_number = context.scene.line_number
         if line_number > 0:
-            # Calculate the maximum line number based on the actual number of lines in the script
+            # Calculate the maximum line number based on the 
+            # actual number of lines in the script
             max_line_number = len(lines)
             if line_number > max_line_number:
                 line_number = max_line_number
@@ -44,23 +36,28 @@ def update_line_number(self, context):
 
             bpy.ops.text.jump(line=line_number)
 
-def draw_func(self, context):
+
+def draw_line(self, context):
     layout = self.layout
+    text = context.space_data.text
+    prefs = bpy.context.preferences.addons[__package__].preferences
+
     row = layout.row(align=True)
     row.scale_x = .9
-            
-    if context.space_data.text is not None:        
+
+    if text and prefs.enable_jump_to_line:
         row.prop(context.scene, "line_number", text="Line")
 
-def register():
-    bpy.types.TEXT_HT_header.append(draw_func)
-    
-    bpy.types.Scene.line_number = bpy.props.IntProperty(min=1, update=update_line_number)
 
-def unregister():    
-    bpy.types.TEXT_HT_header.remove(draw_func)
-    
+def register():
+    bpy.types.Scene.line_number = bpy.props.IntProperty(min=1, update=update_line_number)
+    bpy.types.TEXT_HT_header.append(draw_line)
+
+
+def unregister():
     del bpy.types.Scene.line_number
+    bpy.types.TEXT_HT_header.remove(draw_line)
+
 
 if __name__ == "__main__":
     register()

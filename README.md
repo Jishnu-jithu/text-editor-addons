@@ -1,6 +1,6 @@
 ## Character Count:
 
-![count](https://github.com/Jishnu-jithu/text-editor-addons/assets/145359279/9375d499-a79f-483c-8163-2a13841f6968)
+![count](gif/character_count.gif)
 
 ### Features:
 
@@ -11,7 +11,7 @@
 
 ## Code Map
 
-![code_map](Videos/code_map.gif)
+![code_map](gif/code_map.gif)
 
 **Features:**
 - Enhances the coding experience in Blender by providing a navigational interface for your code.
@@ -28,7 +28,7 @@
 
 ## Find & Replace Popup
 
-![find](https://github.com/Jishnu-jithu/text-editor-addons/assets/145359279/a4b69aa1-abd7-42cc-8084-6362716e2c01)
+![find](gif/find_replace.gif)
 
 ### Features:
 
@@ -45,7 +45,7 @@
 
 ## Jump to Line
 
-![292867176-2895cb7f-f12b-4a93-b84](https://github.com/Jishnu-jithu/text-editor-addons/assets/145359279/6e7b62b8-ca65-44b3-82f7-b4b792dc1a0c)
+![292867176-2895cb7f-f12b-4a93-b84](gif/jump_to_line.gif)
 
 **Features:**
 - Navigate quickly to a specific line in the text editor.
@@ -55,7 +55,7 @@
 
 ## Open Recent
 
-<img src="Videos/Open%20Recent%20v1.3.gif">
+<img src="gif/open_recent.gif">
 
 **Features:** 
 - Manage filenames in the open recent menu via Sidebar > Open Recent Panel (UI List)
@@ -66,7 +66,7 @@
 
 ## Trim Whitespace
 
-![295889542-e54e2801-016e-4c45-bb4](https://github.com/Jishnu-jithu/text-editor-addons/assets/145359279/eff27e80-c72a-40f5-9f85-e2e94a2a95c0)
+![295889542-e54e2801-016e-4c45-bb4](gif/trim_whitespace.gif)
 
 **Features:**
 - Removes all trailing whitespace characters in the current text block.

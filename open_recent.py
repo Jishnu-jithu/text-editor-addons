@@ -34,6 +34,8 @@ from bpy.props import (
     PointerProperty
 )
 
+from . import jump_to_line
+
 
 # ---------------------------
 #    Function Definitions
@@ -97,6 +99,10 @@ class TEXT_OT_open_mainfile(Operator, ImportHelper):
     hide_props_region: BoolProperty(default=True, options={'HIDDEN'})
 
     def invoke(self, context, event):
+        st = bpy.context.space_data.text
+        if st:
+            self.filepath = st.filepath
+
         context.window_manager.fileselect_add(self)
         return {'RUNNING_MODAL'}
 
@@ -272,7 +278,10 @@ class TEXT_OT_save_as_mainfile(Operator, ExportHelper):
     filter_glob: StringProperty(default="*.py", options={'HIDDEN'})
 
     def invoke(self, context, event):
-        st = context.space_data.text
+        st = bpy.context.space_data.text
+
+        if st:
+            self.filepath = st.filepath
 
         if not st.name.endswith('.py'):
             self.filepath = st.name + '.py'
@@ -807,16 +816,23 @@ def recent_header(self, context):
         row.template_ID(st, "text", new="text.new",
                     unlink="text.unlink", open="text.open_mainfile")
 
+    prefs = context.preferences.addons[__package__].preferences
     layout.separator_spacer()
 
+    if prefs.display_text_editor_options:
+        row = layout.row(align=True)
+        row.prop(st, "show_line_numbers", text="")
+        row.prop(st, "show_word_wrap", text="")
 
-    row = layout.row(align=True)
-    row.prop(st, "show_line_numbers", text="")
-    row.prop(st, "show_word_wrap", text="")
+        syntax = row.row(align=True)
+        syntax.active = is_syntax_highlight_supported
+        syntax.prop(st, "show_syntax_highlight", text="")
 
-    syntax = row.row(align=True)
-    syntax.active = is_syntax_highlight_supported
-    syntax.prop(st, "show_syntax_highlight", text="")
+
+    if text and prefs.enable_jump_to_line:
+        row = layout.row(align=True)
+        row.scale_x = .9
+        row.prop(context.scene, "line_number", text="Line")
 
 
 def recent_text_menu(self, context):
@@ -832,18 +848,17 @@ def recent_text_menu(self, context):
     layout.operator("text.open_mainfile", text="Open...", icon='FILE_FOLDER')
     prefs = bpy.context.preferences.addons[__package__].preferences
 
-    if prefs.enable_open_recent:
-        imported_files = []
-        if os.path.exists(txt_path):
-            with open(txt_path, 'r') as txt_file:
-                imported_files = txt_file.readlines()
+    imported_files = []
+    if os.path.exists(txt_path):
+        with open(txt_path, 'r') as txt_file:
+            imported_files = txt_file.readlines()
 
-        if len(imported_files) > 0:
-            layout.menu("TEXT_MT_open_recent")
-        else:
-            row = layout.row()
-            row.enabled = False
-            row.menu("TEXT_MT_open_recent")
+    if len(imported_files) > 0:
+        layout.menu("TEXT_MT_open_recent")
+    else:
+        row = layout.row()
+        row.enabled = False
+        row.menu("TEXT_MT_open_recent")
 
     if text:
         layout.separator()
@@ -921,6 +936,48 @@ def load_list(dummy):
 # ================================================================================ #
 
 
+def update_line_number(self, context):
+    text_editor = context.space_data.text
+    if text_editor is not None:
+        lines = text_editor.as_string().split('\n')
+
+        line_number = context.scene.line_number
+        if line_number > 0:
+            # Calculate the maximum line number based on the
+            # actual number of lines in the script
+            max_line_number = len(lines)
+            if line_number > max_line_number:
+                line_number = max_line_number
+                context.scene.line_number = line_number
+
+            bpy.ops.text.jump(line=line_number)
+
+
+def update_ui(self, context):
+    prefs = bpy.context.preferences.addons[__package__].preferences
+
+    if prefs.enable_open_recent:
+        bpy.types.TEXT_HT_header.draw = recent_header
+        bpy.types.TEXT_MT_text.draw = recent_text_menu
+
+    else:
+        bpy.types.TEXT_HT_header.draw = editor_header
+        bpy.types.TEXT_MT_text.draw = editor_menu
+
+        try:
+            bpy.types.TEXT_HT_header.remove(jump_to_line.draw_line)
+        except ValueError:
+            pass
+
+        try:
+            bpy.types.TEXT_HT_header.append(jump_to_line.draw_line)
+        except ValueError:
+            pass
+
+
+# ================================================================================ #
+
+
 classes = (
     TEXT_PG_properties,
 
@@ -945,7 +1002,7 @@ addon_keymaps = []
 def register():
     for cls in classes:
         bpy.utils.register_class(cls)
-    
+
     bpy.app.timers.register(lambda: load_list(None))
 
     bpy.types.TEXT_HT_header.draw = recent_header
@@ -957,6 +1014,8 @@ def register():
     bpy.types.Scene.recent_list_props = PointerProperty(type=TEXT_PG_properties)
 
     bpy.app.handlers.load_post.append(load_list)
+
+    bpy.types.Scene.line_number = IntProperty(min=1, update=update_line_number)
 
     # handle the keymap
     wm = bpy.context.window_manager
@@ -988,6 +1047,9 @@ def unregister():
     # Remove the properties
     del bpy.types.Scene.recent_list_props
 
+    # Remove jump to line
+    del bpy.types.Scene.line_number
+
     # Remove the keymaps
     for km, kmi in addon_keymaps:
         km.keymap_items.remove(kmi)
@@ -996,4 +1058,3 @@ def unregister():
     bpy.app.handlers.load_post.remove(load_list)
 
     bpy.utils.unregister_class(TEXT_PT_open_recent)
-    

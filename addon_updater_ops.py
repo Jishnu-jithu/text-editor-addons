@@ -1008,6 +1008,7 @@ def update_settings_ui(self, context, element=None):
         sub_col.scale_y = 1
         split = sub_col.split(align=True)
         split.scale_y = 2
+        split.scale_x = .96
         if "ssl" in updater.error_msg.lower():
             split.enabled = True
             split.operator(AddonUpdaterInstallManually.bl_idname,
@@ -1030,6 +1031,7 @@ def update_settings_ui(self, context, element=None):
         split = sub_col.split(align=True)
         split.enabled = False
         split.scale_y = 2
+        split.scale_x = .96
         split.operator(AddonUpdaterCheckNow.bl_idname, text="Checking...")
         split = sub_col.split(align=True)
         split.scale_y = 2
@@ -1043,6 +1045,7 @@ def update_settings_ui(self, context, element=None):
         sub_col.scale_y = 1
         split = sub_col.split(align=True)
         split.scale_y = 2
+        split.scale_x = .96
         update_now_txt = "Update directly to {}".format(
             updater.include_branch_list[0])
         split.operator(AddonUpdaterUpdateNow.bl_idname, text=update_now_txt)
@@ -1056,6 +1059,7 @@ def update_settings_ui(self, context, element=None):
         sub_col.scale_y = 1
         split = sub_col.split(align=True)
         split.scale_y = 2
+        split.scale_x = .96
         split.operator(AddonUpdaterUpdateNow.bl_idname,
                        text="Update now to " + str(updater.update_version))
         split = sub_col.split(align=True)
@@ -1074,6 +1078,7 @@ def update_settings_ui(self, context, element=None):
         split = sub_col.split(align=True)
         split.enabled = False
         split.scale_y = 2
+        split.scale_x = .96
         split.operator(AddonUpdaterCheckNow.bl_idname,
                        text="Addon is up to date")
         split = sub_col.split(align=True)

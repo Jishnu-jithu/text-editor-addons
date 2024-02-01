@@ -27,7 +27,7 @@ def update_line_number(self, context):
 
         line_number = context.scene.line_number
         if line_number > 0:
-            # Calculate the maximum line number based on the 
+            # Calculate the maximum line number based on the
             # actual number of lines in the script
             max_line_number = len(lines)
             if line_number > max_line_number:
@@ -51,9 +51,8 @@ def draw_line(self, context):
 
 def register():
     bpy.types.Scene.line_number = bpy.props.IntProperty(min=1, update=update_line_number)
-    bpy.types.TEXT_HT_header.append(draw_line)
 
 
 def unregister():
-    del bpy.types.Scene.line_number
-    bpy.types.TEXT_HT_header.remove(draw_line)
+    if hasattr(bpy.types.Scene, "line_number"):
+        del bpy.types.Scene.line_number

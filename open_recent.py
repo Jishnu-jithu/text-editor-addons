@@ -664,7 +664,7 @@ class TEXT_MT_open_recent(Menu):
             if missing_paths:
                 layout.operator("text.recent_actions", icon='PANEL_CLOSE', text="Clear Missing Paths").action = 'RECENT_CLEANUP'
             else:
-                layout.operator("text.clear_recent", icon="TRASH", text="Clear Recent Files List")
+                layout.operator("text.clear_recent", icon="TRASH", text="Clear Recent Files List           ")
 
 
 class TEXT_MT_cleanup_menu(Menu):
@@ -846,7 +846,6 @@ def recent_text_menu(self, context):
     layout.operator("text.new", text="New", icon='FILE_NEW')
 
     layout.operator("text.open_mainfile", text="Open...", icon='FILE_FOLDER')
-    prefs = bpy.context.preferences.addons[__package__].preferences
 
     imported_files = []
     if os.path.exists(txt_path):

@@ -416,7 +416,6 @@ def register():
     prefs = context.preferences.addons[__package__].preferences
 
     open_recent.update_ui(prefs, context)
-    print_to_console.update_print(prefs, context)
     Textify_Preferences.update_cm_category(prefs, context)
     Textify_Preferences.update_op_category(prefs, context)
 

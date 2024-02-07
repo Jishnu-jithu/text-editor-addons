@@ -28,8 +28,8 @@ bl_info = {
     "tracker_url": "https://github.com/Jishnu-jithu/text-editor-addons/issues/new/choose",
 }
 
-
 import bpy
+import importlib
 import json
 import os
 from bpy.types import Operator, AddonPreferences
@@ -45,6 +45,16 @@ from . import (
     trim_whitespace,
     open_recent,
 )
+
+def reload_modules():
+    importlib.reload(addon_updater_ops)
+    importlib.reload(character_count)
+    importlib.reload(code_map)
+    importlib.reload(drag_and_drop)
+    importlib.reload(jump_to_line)
+    importlib.reload(find_replace)
+    importlib.reload(trim_whitespace)
+    importlib.reload(open_recent)
 
 
 class BACKUP_OT_backup_preferences(Operator):
@@ -359,8 +369,8 @@ class Textify_Preferences(AddonPreferences):
         # Backup and Restore Operators in the same row, not aligned
         row = box.row()
         row.scale_y = 1.5
-        row.operator("backup.backup_preferences", text="Backup Preferences")
-        row.operator("restore.restore_preferences", text="Restore Preferences")
+        row.operator("backup.backup_preferences", text="Backup Preferences", icon="FILE_BACKUP")
+        row.operator("restore.restore_preferences", text="Restore Preferences", icon="LOOP_BACK")
 
         # Updater settings
         addon_updater_ops.update_settings_ui(self, context)

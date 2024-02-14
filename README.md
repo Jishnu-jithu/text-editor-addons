@@ -8,7 +8,7 @@ Shows Line Number, Column Number, and Total Character Count. Additionally, it di
 
 ![count](gif/character_count.gif)
 
-## Code Map Addon
+## Code Map
 
 Enhances the coding experience by providing a navigational interface for your code. Easily traverse through classes, methods, and functions, making your coding workflow smoother. Inspired by the functionality of Pistiwique Pie Text Editor, Code Map offers a modernized and updated experience for Blender 2.8 and later.
 
@@ -18,7 +18,7 @@ Enhances the coding experience by providing a navigational interface for your co
 
 ![code_map](gif/code_map.gif)
 
-## Find & Replace Popup Addon
+## Find & Replace Popup
 
 Introduces a Find & Replace popup with features like finding previous occurrences, adding selected words to the Find and Replace field, displaying find word count, and navigation using arrow keys.
 
@@ -28,19 +28,19 @@ Introduces a Find & Replace popup with features like finding previous occurrence
 
 ![find](gif/find_replace.gif)
 
-## Jump to Line Addon
+## Jump to Line
 
 Allows quick navigation to a specific line in the text editor. Accessible through the text editor header.
 
 ![292867176-2895cb7f-f12b-4a93-b84](gif/jump_to_line.gif)
 
-## Open Recent Addon
+## Open Recent
 
 Designed for managing recently opened script files in the Blender Text Editor. This addon adds functionality to `Text > Open Recent` and the Sidebar > Open Recent Panel (UI List) to facilitate easy management of open recent items. You can add the current script to the open recent menu, remove items, and rearrange them by moving up or down. For clarity, this addon includes a toggle to display the filename **`__init__.py`** as the folder's name in the Open Recent menu.
 
 ![open_recent](gif/open_recent.gif)
 
-## Trim Whitespace Addon
+## Trim Whitespace
 
 Removes all trailing whitespace characters in the current text block. Accessible through the Text Editor context menu: `Text Editor > Context Menu > Trim Whitespace`.
 

@@ -18,8 +18,13 @@
 
 
 import bpy
+import os
 
-from bpy.types import Operator
+from bpy.types import Operator, Panel
+from bpy.app.translations import (
+    contexts as i18n_contexts,
+    pgettext_iface as iface_,
+)
 
 
 # ------------------------------
@@ -28,6 +33,7 @@ from bpy.types import Operator
 class TEXT_OT_find_previous(Operator):
     bl_idname = "text.find_previous"
     bl_label = "Find Previous"
+    bl_description = "Find specified text"
 
     def execute(self, context):
         text_data = bpy.context.edit_text
@@ -113,17 +119,27 @@ class TEXT_OT_find_replace(Operator):
 
     def invoke(self, context, event):
         st = context.space_data
+        text = st.text
         prefs = bpy.context.preferences.addons[__package__].preferences
 
-        # Check the settings before calling the operators
+        find_text = st.find_text
+        replace_text = st.replace_text
+
         if prefs.enable_find_set_selected:
-            bpy.ops.text.find_set_selected()
+            if prefs.retain_find_text and text.select_set and (text.current_line_index != text.select_end_line_index or text.current_character != text.select_end_character):
+                bpy.ops.text.find_set_selected()
+                bpy.ops.text.find_previous()
+            elif not prefs.retain_find_text:
+                bpy.ops.text.find_set_selected()
+                bpy.ops.text.find_previous()
 
         if prefs.enable_replace_set_selected:
-            bpy.ops.text.replace_set_selected()
+            if prefs.retain_find_text and text.select_set and (text.current_line_index != text.select_end_line_index or text.current_character != text.select_end_character):
+                bpy.ops.text.replace_set_selected()
+            elif not prefs.retain_find_text:
+                bpy.ops.text.replace_set_selected()
 
-        bpy.ops.text.find_previous()
-
+        # width
         max_line_length = 54
         if (len(st.find_text) > max_line_length or len(st.replace_text) > max_line_length):
             width=430
@@ -157,9 +173,16 @@ class TEXT_OT_find_replace(Operator):
         layout.separator()
 
     def draw_find_repalce(self, st, scene, layout):
+        prefs = bpy.context.preferences.addons[__package__].preferences
+
         row = layout.row(align=True)
-        row.prop(st, "find_text", icon='VIEWZOOM', text="")
         row.scale_x = 1.1
+
+        sub = row.row(align=True)
+        if prefs.auto_activate_find and bpy.context.space_data.find_text == "":
+            sub.activate_init = True
+        sub.prop(st, "find_text", icon='VIEWZOOM', text="")
+
         row.operator("text.find", text="", icon="SORT_ASC")
         row.operator("text.find_previous", text="", icon="SORT_DESC")
 
@@ -208,12 +231,55 @@ class TEXT_OT_find_replace(Operator):
 # ------------------------------
 
 
+class TEXT_PT_find(Panel):
+    bl_space_type = 'TEXT_EDITOR'
+    bl_region_type = 'UI'
+    bl_category = "Text"
+    bl_label = "Find & Replace"
+
+    def draw(self, context):
+        layout = self.layout
+        st = context.space_data
+
+        # find
+        col = layout.column()
+        row = col.row(align=True)
+        row.prop(st, "find_text", icon='VIEWZOOM', text="")
+        row.operator("text.find_set_selected", text="", icon='EYEDROPPER')
+        row = col.row(align=True)
+        row.operator("text.find")
+        row.operator("text.find_previous")
+
+        layout.separator()
+
+        # replace
+        col = layout.column()
+        row = col.row(align=True)
+        row.prop(st, "replace_text", icon='DECORATE_OVERRIDE', text="")
+        row.operator("text.replace_set_selected", text="", icon='EYEDROPPER')
+
+        row = col.row(align=True)
+        row.operator("text.replace")
+        row.operator("text.replace", text="Replace All").all = True
+
+        layout.separator()
+
+        # settings
+        row = layout.row(align=True)
+        if not st.text:
+            row.active = False
+        row.prop(st, "use_match_case", text="Case",
+                 text_ctxt=i18n_contexts.id_text, toggle=True)
+        row.prop(st, "use_find_wrap", text="Wrap",
+                 text_ctxt=i18n_contexts.id_text, toggle=True)
+        row.prop(st, "use_find_all", text="All", toggle=True)
+
+
+# ------------------------------
+
 def draw_func(self, context):
     layout = self.layout
-    prefs = bpy.context.preferences.addons[__package__].preferences
-
-    if prefs.enable_find_replace:
-        layout.operator("text.find_replace", text="Find & Replace Popup")
+    layout.operator("text.find_replace", text="Find & Replace Popup")
 
 
 # ------------------------------
@@ -232,22 +298,26 @@ def register():
     for cls in classes:
         bpy.utils.register_class(cls)
 
+    try:
+        bpy.utils.register_class(TEXT_PT_find)
+    except:
+        pass
+
     bpy.types.TEXT_MT_edit.append(draw_func)
 
     # handle the keymap
     wm = bpy.context.window_manager
-
     if wm.keyconfigs.addon:
         km = wm.keyconfigs.addon.keymaps.new(name='Text', space_type='TEXT_EDITOR')
 
         kmi = km.keymap_items.new('text.find_replace', 'F1', 'PRESS')
         addon_keymaps.append((km, kmi))
 
-        # Keymap for find_replace (find previous)
+        # Keymap for find previous
         kmi = km.keymap_items.new('text.find_previous', 'UP_ARROW', 'PRESS', alt=True)
         addon_keymaps.append((km, kmi))
 
-        # Keymap for find (find next)
+        # Keymap for find next
         kmi = km.keymap_items.new('text.find', 'DOWN_ARROW', 'PRESS', alt=True)
         addon_keymaps.append((km, kmi))
 
@@ -257,6 +327,32 @@ def unregister():
         bpy.utils.unregister_class(cls)
 
     bpy.types.TEXT_MT_edit.remove(draw_func)
+
+    try:
+        # Get the path of the current Blender executable
+        blender_path = bpy.app.binary_path
+
+        # Get the directory of the Blender executable
+        blender_dir = os.path.dirname(blender_path)
+
+        # Get the Blender version
+        blender_version_full = bpy.app.version_string.split(' ')[0]
+        blender_version_parts = blender_version_full.split('.')
+        blender_version = '.'.join(blender_version_parts[:2])  # Use only the first two parts
+
+        # Construct the path to the scripts directory
+        scripts_dir = os.path.join(blender_dir, blender_version, "scripts", "startup", "bl_ui")
+
+        # Specify the name of your script
+        script_name = "space_text.py"
+
+        # Construct the full path to your script
+        script_path = os.path.join(scripts_dir, script_name)
+
+        # Run the original panel code
+        bpy.ops.script.python_file_run(filepath=script_path)
+    except Exception as e:
+        print("Error: ", e)
 
     for km, kmi in addon_keymaps:
         km.keymap_items.remove(kmi)

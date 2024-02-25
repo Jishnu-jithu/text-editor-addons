@@ -37,15 +37,14 @@ from bpy.props import (
 from . import jump_to_line
 
 
-# ---------------------------
-#    Function Definitions
-# ---------------------------
-
-
 class TEXT_PG_properties(PropertyGroup):
     recent_list: CollectionProperty(type=PropertyGroup)
     recent_list_index: IntProperty(name="Recent list index")
-    display_folder: BoolProperty(name="Filter __init__.py file", description="Display Folder Name for __init__.py files", default=True)
+
+
+# -------------------------------------------------------------
+#                           Functions
+# -------------------------------------------------------------
 
 
 def get_recent_list():
@@ -79,9 +78,9 @@ def update_list():
             props.recent_list.add().name = line.strip()
 
 
-# --------------------------
-#         Operators
-# --------------------------
+# -------------------------------------------------------------
+#                          Operators
+# -------------------------------------------------------------
 
 
 class TEXT_OT_open_mainfile(Operator, ImportHelper):
@@ -190,6 +189,9 @@ class TEXT_OT_open_file(Operator):
             # The file is not open, so open it
             bpy.ops.text.open(filepath=self.filepath)
 
+        if bpy.context.preferences.addons[__package__].preferences.enable_package_reordering:
+            self.reorder_package_files()
+
         imported_files = []
         if os.path.exists(txt_path):
             with open(txt_path, 'r') as txt_file:
@@ -204,6 +206,41 @@ class TEXT_OT_open_file(Operator):
 
         update_list()
         return {'FINISHED'}
+
+    def reorder_package_files(self):
+        list, index, txt_path = get_recent_list()
+
+        if os.path.exists(txt_path):
+            with open(txt_path, 'r') as txt_file:
+                imported_files = [filepath.strip() for filepath in txt_file.readlines()]
+
+            # Get the directory of the current file
+            current_dir = os.path.dirname(self.filepath)
+
+            # Check if the directory contains an __init__.py file
+            if os.path.isfile(os.path.join(current_dir, '__init__.py')):
+                # This is a package directory
+
+                # Get all files in the same directory
+                package_files = [f for f in imported_files if os.path.dirname(f) == current_dir]
+
+                # Check if the files are already one after the other in the list
+                first_index = imported_files.index(package_files[0])
+                if imported_files[first_index:first_index + len(package_files)] == package_files:
+                    # The files are already one after the other, so no need to reorder
+                    return
+
+                # Remove the package files from the list
+                for f in package_files:
+                    imported_files.remove(f)
+
+                # Add the package files to the top of the list
+                imported_files = package_files + imported_files
+
+                # Write the reordered list back to the file
+                with open(txt_path, 'w') as txt_file:
+                    for filepath in imported_files:
+                        txt_file.write(filepath + '\n')
 
     def remove_invalid_file_from_txt_file(self):
         list, index, txt_path = get_recent_list()
@@ -288,7 +325,9 @@ class TEXT_OT_save_as_mainfile(Operator, ExportHelper):
         else:
             self.filepath = st.name
 
-        return super().invoke(context, event)
+        context.window_manager.fileselect_add(self)
+
+        return {'RUNNING_MODAL'}
 
     def execute(self, context):
         st = context.space_data.text
@@ -316,6 +355,7 @@ class TEXT_OT_save_as_mainfile(Operator, ExportHelper):
                 txt_file.write(filepath + '\n')
 
         update_list()
+
         return {'FINISHED'}
 
 
@@ -355,6 +395,7 @@ class TEXT_OT_clear_recent(Operator):
             txt_file.write('')
 
         update_list()
+
         return {'FINISHED'}
 
 
@@ -363,7 +404,6 @@ class TEXT_OT_open_recent_actions(Operator):
     bl_label = ""
     bl_description = "Open Recent actions"
     bl_options = {'REGISTER', 'UNDO'}
-
 
     action: EnumProperty(items=[
         ('ADD', 'Add', ''),
@@ -380,7 +420,6 @@ class TEXT_OT_open_recent_actions(Operator):
     @classmethod
     def poll(cls, context):
         return context.scene.recent_list_props.recent_list
-
 
     @classmethod
     def description(cls, context, properties):
@@ -417,7 +456,6 @@ class TEXT_OT_open_recent_actions(Operator):
         # Default description
         return descriptions.get(properties.action, 'Manage Open Recent List')
 
-
     def execute(self, context):
         if self.action == 'ADD':
             return self.add_path(context)
@@ -435,7 +473,6 @@ class TEXT_OT_open_recent_actions(Operator):
             return self.remove_duplicates(context)
         elif self.action == 'OPEN_FOLDER':
             return self.open_folder(context)
-
 
     def add_path(self, context):
         st = context.space_data.text
@@ -467,7 +504,6 @@ class TEXT_OT_open_recent_actions(Operator):
 
         return {'FINISHED'}
 
-
     def remove_path(self, context):
         list, index, txt_path = get_recent_list()
         props = context.scene.recent_list_props
@@ -489,7 +525,6 @@ class TEXT_OT_open_recent_actions(Operator):
 
         return {'FINISHED'}
 
-
     def move_path(self, context, direction):
         list, index, txt_path = get_recent_list()
         props = context.scene.recent_list_props
@@ -510,7 +545,6 @@ class TEXT_OT_open_recent_actions(Operator):
 
         return {'FINISHED'}
 
-
     def move_item_in_file(self, from_index, to_index):
         list, index, txt_path = get_recent_list()
 
@@ -523,7 +557,6 @@ class TEXT_OT_open_recent_actions(Operator):
             with open(txt_path, 'w') as txt_file:
                 for filepath in imported_files:
                     txt_file.write(filepath + '\n')
-
 
     def open_selected(self, context):
         props = context.scene.recent_list_props
@@ -544,7 +577,6 @@ class TEXT_OT_open_recent_actions(Operator):
             self.report({'WARNING'}, f"File not found: {filepath}")
 
         return {'FINISHED'}
-
 
     def recent_cleanup(self, context):
         list, index, txt_path = get_recent_list()
@@ -570,7 +602,6 @@ class TEXT_OT_open_recent_actions(Operator):
 
             self.report({'INFO'}, f"Cleared missing paths: {', '.join(missing_paths)}")
         return {'FINISHED'}
-
 
     def remove_duplicates(self, context):
         list, index, txt_path = get_recent_list()
@@ -601,7 +632,6 @@ class TEXT_OT_open_recent_actions(Operator):
         self.report({'INFO'}, f"Removed duplicate paths")
         return {'FINISHED'}
 
-
     def open_folder(self, context):
         list, index, _ = get_recent_list()
         selected_item = list[index].name
@@ -612,9 +642,9 @@ class TEXT_OT_open_recent_actions(Operator):
         return {'FINISHED'}
 
 
-# -------------------------
-#           Menu
-# -------------------------
+# -------------------------------------------------------------
+#                            Menu
+# -------------------------------------------------------------
 
 
 class TEXT_MT_open_recent(Menu):
@@ -625,9 +655,9 @@ class TEXT_MT_open_recent(Menu):
     def draw(self, context):
         layout = self.layout
         scene = context.scene
-        props = scene.recent_list_props
-        list, index, txt_path = get_recent_list()
+        prefs = bpy.context.preferences.addons[__package__].preferences
 
+        list, index, txt_path = get_recent_list()
         valid_paths = [item.name for item in list if os.path.isfile(item.name)]
         missing_paths = set(item.name for item in list) - set(valid_paths)
 
@@ -642,11 +672,11 @@ class TEXT_MT_open_recent(Menu):
             # Display the folder name if the file ends with '__init__.py'
             display_name = os.path.basename(filepath)
 
-            if props.display_folder and display_name.lower().endswith('__init__.py'):
+            if prefs.display_folder_name and display_name.lower().endswith('__init__.py'):
                 folder_name = os.path.basename(os.path.dirname(filepath))
                 display_name = folder_name.lower().replace(" ", "_") + ".py"
 
-            elif props.display_folder:
+            elif prefs.display_folder_name:
                 display_name = display_name.lower().replace(" ", "_")
 
                 # Ensure it ends with ".py" if it doesn't already
@@ -691,21 +721,21 @@ class TEXT_MT_cleanup_menu(Menu):
             layout.operator("text.recent_actions", icon="DUPLICATE", text="Clear Duplicates").action = 'REMOVE_DUPLICATES'
 
 
-# --------------------------
-#           UIList
-# --------------------------
+# -------------------------------------------------------------
+#                            UIList
+# -------------------------------------------------------------
 
 
 class TEXT_UL_open_recent(UIList):
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
         # Display the folder name if the file ends with '__init__.py'
         display_name = os.path.basename(item.name)
-        props = context.scene.recent_list_props
+        prefs = bpy.context.preferences.addons[__package__].preferences
 
-        if props.display_folder and display_name.lower().endswith('__init__.py'):
+        if prefs.display_folder_name and display_name.lower().endswith('__init__.py'):
             folder_name = os.path.basename(os.path.dirname(item.name))
             display_name = folder_name.lower().replace(" ", "_") + ".py"
-        elif props.display_folder:
+        elif prefs.display_folder_name:
             display_name = display_name.lower().replace(" ", "_")
 
             if not display_name.endswith(".py"):
@@ -714,9 +744,9 @@ class TEXT_UL_open_recent(UIList):
         layout.label(text=display_name, icon='WORDWRAP_ON')
 
 
-# ---------------------------
-#           Panel
-# ---------------------------
+# -------------------------------------------------------------
+#                             Panel
+# -------------------------------------------------------------
 
 
 class TEXT_PT_open_recent(Panel):
@@ -736,6 +766,7 @@ class TEXT_PT_open_recent(Panel):
         props = scene.recent_list_props
         st = context.space_data
         text = st.text
+        prefs = bpy.context.preferences.addons[__package__].preferences
 
         row = layout.row()
         row.template_list("TEXT_UL_open_recent", "", props, "recent_list", props, "recent_list_index", rows=8)
@@ -764,17 +795,17 @@ class TEXT_PT_open_recent(Panel):
         col.separator()
 
         if props.recent_list:
-            col.prop(props, "display_folder", text="", icon="FILTER", toggle=True)
+            col.prop(prefs, "display_folder_name", text="", icon="FILTER", toggle=True)
         else:
             col.enabled = False
-            col.prop(props, "display_folder", text="", icon="FILTER", toggle=True)
+            col.prop(prefs, "display_folder_name", text="", icon="FILTER", toggle=True)
 
         layout.operator("text.recent_actions", text="Open Selected").action = 'OPEN_SELECTED'
 
 
-# ----------------------------
-#       Draw Custom Menu
-# ----------------------------
+# -------------------------------------------------------------
+#                       Draw Custom Menu
+# -------------------------------------------------------------
 
 
 # Store a reference to the original draw method
@@ -865,9 +896,10 @@ def recent_text_menu(self, context):
         row.operator("text.reload")
         row.enabled = not text.is_in_memory
 
-        row = layout.row()
-        row.operator("text.jump_to_file_at_point", text="Edit Externally")
-        row.enabled = (not text.is_in_memory and context.preferences.filepaths.text_editor != "")
+        if bpy.app.version >= (4, 0, 0):
+            row = layout.row()
+            row.operator("text.jump_to_file_at_point", text="Edit Externally")
+            row.enabled = (not text.is_in_memory and context.preferences.filepaths.text_editor != "")
 
         layout.separator()
         layout.operator("text.save_mainfile", icon='FILE_TICK')
@@ -912,24 +944,21 @@ class TEXT_MT_editor_menus(Menu):
 # Load UIList On Startup
 @persistent
 def load_list(dummy):
-    prefs = bpy.context.preferences.addons[__package__].preferences
+    list, index, txt_path = get_recent_list()
+    props = bpy.context.scene.recent_list_props
 
-    if prefs.enable_open_recent:
-        list, index, txt_path = get_recent_list()
-        props = bpy.context.scene.recent_list_props
+    if os.path.exists(txt_path):
+        # Read the file and get the valid paths
+        with open(txt_path, 'r') as txt_file:
+            lines = txt_file.readlines()
+            valid_paths = sorted(set(lines), key=lines.index)
 
-        if os.path.exists(txt_path):
-            # Read the file and get the valid paths
-            with open(txt_path, 'r') as txt_file:
-                lines = txt_file.readlines()
-                valid_paths = sorted(set(lines), key=lines.index)
+        # Clear the UI list
+        props.recent_list.clear()
 
-            # Clear the UI list
-            props.recent_list.clear()
-
-            # Add the valid paths back to the UI list
-            for line in valid_paths:
-                props.recent_list.add().name = line.strip()
+        # Add the valid paths back to the UI list
+        for line in valid_paths:
+            props.recent_list.add().name = line.strip()
 
 
 # ================================================================================ #
@@ -950,28 +979,6 @@ def update_line_number(self, context):
                 context.scene.line_number = line_number
 
             bpy.ops.text.jump(line=line_number)
-
-
-def update_ui(self, context):
-    prefs = bpy.context.preferences.addons[__package__].preferences
-
-    if prefs.enable_open_recent:
-        bpy.types.TEXT_HT_header.draw = recent_header
-        bpy.types.TEXT_MT_text.draw = recent_text_menu
-
-    else:
-        bpy.types.TEXT_HT_header.draw = editor_header
-        bpy.types.TEXT_MT_text.draw = editor_menu
-
-        try:
-            bpy.types.TEXT_HT_header.remove(jump_to_line.draw_line)
-        except ValueError:
-            pass
-
-        try:
-            bpy.types.TEXT_HT_header.append(jump_to_line.draw_line)
-        except ValueError:
-            pass
 
 
 # ================================================================================ #
@@ -1018,7 +1025,6 @@ def register():
 
     # handle the keymap
     wm = bpy.context.window_manager
-
     if wm.keyconfigs.addon:
         km = wm.keyconfigs.addon.keymaps.new(name='Text', space_type='TEXT_EDITOR')
 

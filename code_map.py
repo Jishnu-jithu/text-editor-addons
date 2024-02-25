@@ -19,14 +19,16 @@
 
 import bpy
 import os
-
+import ast
 
 from bpy.utils import previews
 from bpy.types import Operator, Panel, PropertyGroup, WindowManager
 from bpy.props import CollectionProperty, StringProperty, IntProperty, BoolProperty, EnumProperty, PointerProperty
 
 
-# ------------------------------
+# -------------------------------------------------------------
+#                            Icon
+# -------------------------------------------------------------
 
 
 custom_icons = None
@@ -59,7 +61,9 @@ def unload_icons():
         custom_icons = None
 
 
-# ------------------------------
+# -------------------------------------------------------------
+#                          Operators
+# -------------------------------------------------------------
 
 
 class CODE_MAP_OT_jump(Operator):
@@ -105,7 +109,9 @@ class CODE_MAP_OT_dynamic_toggle(Operator):
         return {'FINISHED'}
 
 
-# ------------------------------
+# -------------------------------------------------------------
+#                        Property Group
+# -------------------------------------------------------------
 
 
 class CODE_MAP_PG_properties(PropertyGroup):
@@ -118,7 +124,9 @@ class CODE_MAP_PG_properties(PropertyGroup):
     display_properties: BoolProperty(default=True, description="Show Properties")
 
 
-# ------------------------------
+# -------------------------------------------------------------
+#                          Draw Helper
+# -------------------------------------------------------------
 
 
 class DrawHelper:
@@ -126,14 +134,15 @@ class DrawHelper:
         load_icons()
 
         props = wm.code_map_properties
-
-        layout.prop(wm, "search", text="", icon="VIEWZOOM")
-
-        # Check if the toggle is enabled in the addon preferences
         prefs = bpy.context.preferences.addons[__package__].preferences
 
+        row = layout.row()
+        if prefs.auto_activate_search:
+            row.activate_init = True
+        row.prop(wm, "search", text="", icon="VIEWZOOM")
+
         # Check if the toggle is enabled in the addon preferences
-        if prefs.show_code_filters:
+        if prefs.display_code_filters:
             layout.separator(factor=0.1)
 
             row = layout.row(align=True)
@@ -147,7 +156,7 @@ class DrawHelper:
 
             layout.separator(factor=0.1)
 
-        if props.display_classes and prefs.show_class_type:
+        if props.display_classes and prefs.display_class_type:
             layout.prop(prefs, "code_filter_type", text="")
 
         if text is not None:
@@ -165,33 +174,27 @@ class DrawHelper:
                 if line.body.startswith("class "):
                     class_name, base_class = self.parse_class_line(line.body)
                     has_methods = self.has_methods(text.lines[i + 1:], class_name)
-                    is_class_name = any(item.value == class_name for item in wm.show_def_lines)
+                    is_class_name = any(item.value == class_name for item in wm.display_def_lines)
 
-                    if self.is_match(wm.search, class_name, line, has_methods):
-                        # Check if Classes should be shown
-                        if props.display_classes:
-                            self.draw_class_row(layout, context, text, class_name, base_class,
-                                                has_methods, is_class_name, i, wm)
+                    if self.is_match(wm.search, class_name, line, has_methods) and props.display_classes:
+                        self.draw_class_row(layout, context, text, class_name, base_class,
+                                            has_methods, is_class_name, i, wm)
 
                 # Check for constants
-                elif " = " in line.body and not line.body.startswith(" ") and not line.body.startswith("#") and search_in_line:
-                    if props.display_variables:
-                        self.draw_variable_row(layout, text, line.body, i, has_class, wm)
+                elif " = " in line.body and not line.body.startswith(" ") and not line.body.startswith("#") and search_in_line and props.display_variables:
+                    self.draw_variable_row(layout, text, line.body, i, has_class, wm)
 
                 # Check for functions
-                elif line.body.startswith("def ") and search_in_line:
-                    if props.display_functions:
-                        self.draw_function_row(layout, text, line.body, i, has_class, wm)
+                elif line.body.startswith("def ") and search_in_line and props.display_functions:
+                    self.draw_function_row(layout, context, text, line.body, i, has_class, wm)
 
                 # Check for functions inside a class
-                elif line.body.startswith("    def ") and is_class_name and search_in_line:
-                    if props.display_class_functions:
-                        self.draw_class_function_row(layout, text, line.body, i)
+                elif line.body.startswith("    def ") and is_class_name and search_in_line and props.display_class_functions:
+                    self.draw_class_function_row(layout, text, line.body, i)
 
                 # Check for properties
-                elif ": " in line.body and is_class_name and not line.body[4].isspace() and search_in_line:
-                    if props.display_properties:
-                        self.draw_property_row(layout, text, line.body, i)
+                elif ": " in line.body and is_class_name and not line.body[4].isspace() and not line.body.startswith("#") and search_in_line and props.display_class_functions:
+                    self.draw_property_row(layout, text, line.body, i)
 
                 # Check for properties and functions inside a class for wm.search
                 elif wm.search.strip():
@@ -252,7 +255,6 @@ class DrawHelper:
         else:
             return "UNKNOWN"
 
-
     def draw_variable_row(self, layout, text, line, i, has_class, wm):
         row = layout.row(align=True)
         row.alignment = 'LEFT'
@@ -267,24 +269,55 @@ class DrawHelper:
         row.operator("code_map.jump", text=constant, icon_value=custom_icons["variable"].icon_id,
                      emboss=False).line_number = i + 1
 
-
-    def draw_function_row(self, layout, text, line, i, has_class, wm):
+    def draw_function_row(self, layout, context, text, line, i, has_class, wm):
+        prefs = context.preferences.addons[__package__].preferences
+        
         row = layout.row(align=True)
-        row.alignment = 'LEFT'
+        sub = row.row(align=True)  # Align the sub-row containing the operator and label
+        sub.alignment = 'LEFT'
 
-        if has_class and not wm.search.strip():
-            row.label(text="", icon="BLANK1")
+        if has_class:
+            sub.label(text="", icon="BLANK1")
 
         # Get the first word from the line
         function = line.split(' ', 1)[1].split('(')[0]
         function = self.truncate_text(function)
 
-        row.operator("code_map.jump", text=function, icon_value=custom_icons["function"].icon_id,
+        sub = row.row()
+        sub.alignment = 'LEFT'
+        sub.operator("code_map.jump", text=function, icon_value=custom_icons["function"].icon_id,
                      emboss=False).line_number = i + 1
+        
+        if prefs.display_function_indicator:
+            if len(text.lines) > 900:
+                return
+            # Optimize AST parsing and indicator display:
+            if not hasattr(self, "_ast_cache"):
+                self._ast_cache = {}  # Cache for parsed AST trees
 
+            tree = self._ast_cache.get(text.as_string())
+            if tree is None:
+                try:
+                    tree = ast.parse(text.as_string())
+                    self._ast_cache[text.as_string()] = tree  # Store parsed tree in cache
+                except (SyntaxError, IndentationError, ValueError, TypeError,
+                        OverflowError, ModuleNotFoundError, AttributeError, MemoryError, RecursionError):
+                    pass
+
+            func_node = {}  # Initialize func_node as an empty dictionary
+            if tree is not None:
+                func_node = {node.name: (node.lineno, node.end_lineno) for node in ast.walk(tree) if isinstance(node, ast.FunctionDef)}
+                        
+            # Check if the current line index is within the lines of the class
+            current_line_index = text.current_line_index
+            if function in func_node and func_node[function][0] <= current_line_index + 1 <= func_node[function][1]:
+                sub = row.row()
+                sub.alignment = 'RIGHT'
+                sub.label(text="", icon="LAYER_ACTIVE")
 
     def draw_class_row(self, layout, context, text, class_name, base_class, has_methods, is_class_name, i, wm):
         prefs = context.preferences.addons[__package__].preferences
+
         try:
             code_element_type = self.get_class_type(class_name, base_class)
         except Exception as e:
@@ -292,23 +325,52 @@ class DrawHelper:
 
         if prefs.code_filter_type == "ALL" or prefs.code_filter_type == code_element_type:
             row = layout.row(align=True)
-            row.alignment = 'LEFT'
-            sub = row.row()
+            sub = row.row(align=True)  # Align the sub-row containing the operator and label
+            sub.alignment = 'LEFT'
 
             icon = 'BLANK1' if not has_methods else 'DOWNARROW_HLT' if is_class_name else 'RIGHTARROW'
 
             # Dynamically show an arrow icon for classes with functions,
             # or a blank icon if the class has no functions
             prop = sub.operator("code_map.toggle_string", text="", icon=icon, emboss=False)
-            prop.data_path = "window_manager.show_def_lines"
+            prop.data_path = "window_manager.display_def_lines"
             prop.value = class_name
 
             if wm.search.strip():
                 sub.enabled = False
 
-            row.operator("code_map.jump", text=class_name, icon_value=custom_icons["class"].icon_id,
+            sub = row.row()
+            sub.alignment = 'LEFT'
+            sub.operator("code_map.jump", text=class_name, icon_value=custom_icons["class"].icon_id,
                          emboss=False).line_number = i + 1
 
+            if prefs.display_class_indicator:
+                if len(text.lines) > 900:
+                    return
+                # Optimize AST parsing and indicator display:
+                if not hasattr(self, "_ast_cache"):
+                    self._ast_cache = {}  # Cache for parsed AST trees
+
+                tree = self._ast_cache.get(text.as_string())
+                if tree is None:
+                    try:
+                        tree = ast.parse(text.as_string())
+                        self._ast_cache[text.as_string()] = tree  # Store parsed tree in cache
+                    except (SyntaxError, IndentationError, ValueError, TypeError,
+                            OverflowError, ModuleNotFoundError, AttributeError, MemoryError, RecursionError):
+                        pass
+
+                class_node = None
+                if tree is not None:
+                    # Find the node corresponding to the current class
+                    class_node = next((node for node in ast.walk(tree) if isinstance(node, ast.ClassDef) and node.name == class_name), None)
+                    
+                # Check if the current line index is within the lines of the class
+                current_line_index = context.space_data.text.current_line_index
+                if class_node and class_node.lineno <= current_line_index + 1 <= class_node.end_lineno:
+                    sub = row.row()
+                    sub.alignment = 'RIGHT'
+                    sub.label(text="", icon="LAYER_ACTIVE")
 
     def draw_property_row(self, layout, text, line, i):
         properties = [
@@ -344,7 +406,9 @@ class DrawHelper:
                      emboss=False).line_number = i + 1
 
 
-# ------------------------------
+# -------------------------------------------------------------
+#                         Popup, Panel
+# -------------------------------------------------------------
 
 
 class CODE_MAP_OT_popup(Operator):
@@ -411,14 +475,14 @@ addon_keymaps = []
 def register():
     try:
         bpy.utils.register_class(CODE_MAP_PG_properties)
-        WindowManager.show_def_lines = CollectionProperty(type=CODE_MAP_PG_properties)
+        WindowManager.display_def_lines = CollectionProperty(type=CODE_MAP_PG_properties)
         WindowManager.code_map_properties = PointerProperty(type=CODE_MAP_PG_properties)
 
         WindowManager.search = StringProperty(
             name="Search", description="Search for class, funcion, variable amd method")
     except:
         pass
-    
+
     for cls in classes:
         bpy.utils.register_class(cls)
 
@@ -433,10 +497,10 @@ def register():
 def unregister():
     for cls in reversed(classes):
         bpy.utils.unregister_class(cls)
-        
+
     bpy.utils.unregister_class(CODE_MAP_PG_properties)
     del WindowManager.code_map_properties
-    del WindowManager.show_def_lines
+    del WindowManager.display_def_lines
     del WindowManager.search
 
     for km, kmi in addon_keymaps:
